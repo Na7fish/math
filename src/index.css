@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Hind+Siliguri:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-bangla: "Hind Siliguri", sans-serif;
+
+  --color-ten-red: #E8001D;
+  --color-success: #1CAB55;
+  --color-info: #274FE3;
+  --color-warn: #EA580C;
+  --color-ten-ink: #111827;
+  --color-ten-white: #FFFFFF;
+  --color-gray-50: #F9FAFB;
+  --color-border: #E5E7EB;
+  
+  --radius-xl: 16px;
+}
+
+:root {
+  --ten-red: #E8001D;
+  --success: #1CAB55;
+  --info: #274FE3;
+  --warn: #EA580C;
+}
+
+body {
+  font-family: var(--font-bangla);
+  background-color: var(--color-gray-50);
+  color: var(--color-ten-ink);
+}
+
+.bento-card {
+  background: white;
+  border: 1.5px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mono {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.sign-pill-pos {
+  background-color: #DCFCE7;
+  color: #1CAB55;
+  border: 1px solid #BBF7D0;
+}
+
+.sign-pill-neg {
+  background-color: #FEE2E2;
+  color: #E8001D;
+  border: 1px solid #FECACA;
+}
