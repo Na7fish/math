@@ -30,6 +30,7 @@ interface QuadState {
   c: number;
   h: number;
   k: number;
+  snapshot: { a: number, h: number, k: number } | null;
   showVertex: boolean;
   showAoS: boolean;
   showEquations: boolean;
@@ -49,6 +50,7 @@ export default function QuadraticSim() {
     c: 0,
     h: 0,
     k: 0,
+    snapshot: null,
     showVertex: true,
     showAoS: false,
     showEquations: true,
@@ -73,14 +75,23 @@ export default function QuadraticSim() {
     setState(prev => ({ ...prev, a, b, c, h, k }));
   };
 
-  const handleReset = () => {
+  const takeSnapshot = () => {
+    setState(s => ({ ...s, snapshot: { a: s.a, h: s.h, k: s.k } }));
+  };
+
+  const clearSnapshot = () => {
+    setState(s => ({ ...s, snapshot: null }));
+  };
+
+  const resetToMode = (mode: QuadMode) => {
     setState({
-      mode: state.mode,
+      mode,
       a: 1,
       b: 0,
       c: 0,
       h: 0,
       k: 0,
+      snapshot: null,
       showVertex: true,
       showAoS: false,
       showEquations: true,
@@ -88,40 +99,44 @@ export default function QuadraticSim() {
       showFocus: true,
       showDirectrix: true,
     });
+    setActiveMenu(false);
+  };
+
+  const handleReset = () => {
+    resetToMode(state.mode);
   };
 
   if (activeMenu) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-black text-white p-6 md:p-12 overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center bg-white text-gray-900 p-6 md:p-12 overflow-y-auto">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-7xl font-bold mb-16 text-center tracking-tight"
+          className="text-5xl md:text-7xl font-bold mb-16 text-center tracking-tight text-gray-900"
         >
-          Graphing Quadratics
+          দ্বিঘাত সমীকরণ গ্রাফিং
         </motion.h1>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl w-full">
           <MenuCard 
-            title="Explore" 
-            active 
-            icon={<div className="w-full h-full bg-blue-50/10 flex items-center justify-center"><ParabolaIcon type="explore" /></div>}
-            onClick={() => { setState(s => ({ ...s, mode: 'Explore' })); setActiveMenu(false); }}
+            title="অন্বেষণ (Explore)" 
+            icon={<ParabolaIcon type="explore" />}
+            onClick={() => resetToMode('Explore')}
           />
           <MenuCard 
-            title="Standard Form" 
-            icon={<div className="w-full h-full bg-gray-900 flex items-center justify-center border border-white/10"><ParabolaIcon type="standard" /></div>}
-            onClick={() => { setState(s => ({ ...s, mode: 'Standard' })); setActiveMenu(false); }}
+            title="সাধারণ আকার (Standard Form)" 
+            icon={<ParabolaIcon type="standard" />}
+            onClick={() => resetToMode('Standard')}
           />
           <MenuCard 
-            title="Vertex Form" 
-            icon={<div className="w-full h-full bg-gray-900 flex items-center justify-center border border-white/10"><ParabolaIcon type="vertex" /></div>}
-            onClick={() => { setState(s => ({ ...s, mode: 'Vertex' })); setActiveMenu(false); }}
+            title="শীর্ষবিন্দু আকার (Vertex Form)" 
+            icon={<ParabolaIcon type="vertex" />}
+            onClick={() => resetToMode('Vertex')}
           />
           <MenuCard 
-            title="Focus & Directrix" 
-            icon={<div className="w-full h-full bg-gray-900 flex items-center justify-center border border-white/10"><ParabolaIcon type="focus" /></div>}
-            onClick={() => { setState(s => ({ ...s, mode: 'Focus' })); setActiveMenu(false); }}
+            title="উপকেন্দ্র ও নিয়ামক (Focus & Directrix)" 
+            icon={<ParabolaIcon type="focus" />}
+            onClick={() => resetToMode('Focus')}
           />
         </div>
       </div>
@@ -129,10 +144,10 @@ export default function QuadraticSim() {
   }
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row bg-[#e8f8f8] font-sans">
+    <div className="flex-1 flex flex-col md:flex-row bg-gray-50 font-sans overflow-hidden">
       {/* Simulation Area */}
-      <div className="flex-1 relative p-4 lg:p-8 flex items-center justify-center">
-        <div className="w-full aspect-square max-w-[600px] bg-white rounded-lg shadow-xl border border-gray-200 relative overflow-hidden">
+      <div className="flex-1 relative p-2 md:p-4 flex items-center justify-center bg-gray-50 overflow-hidden">
+        <div className="w-full aspect-square max-w-[800px] bg-white rounded-lg shadow-xl border border-gray-200 relative overflow-hidden">
           <QuadraticCanvas 
             state={state} 
             onChange={(h, k) => updateFromVertex(state.a, h, k)}
@@ -146,7 +161,7 @@ export default function QuadraticSim() {
           
           <button 
             onClick={handleReset}
-            className="absolute bottom-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg border border-gray-100 hover:rotate-180 transition-transform duration-500 text-orange-500"
+            className="absolute bottom-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg border border-gray-100 hover:rotate-180 transition-transform duration-500 text-red-600"
           >
             <RotateCcw className="w-6 h-6" />
           </button>
@@ -154,97 +169,190 @@ export default function QuadraticSim() {
       </div>
 
       {/* Control Panel */}
-      <div className="w-full md:w-[400px] bg-[#e8f8f8] border-l border-gray-200 p-6 flex flex-col gap-6 overflow-y-auto">
+      <div className="w-full md:w-[480px] bg-white border-l border-gray-200 p-4 md:p-6 flex flex-col gap-4 md:gap-6 overflow-y-auto">
         
         {/* Equation Editor */}
-        <section className="bg-[#f2f2f2] border border-gray-300 rounded-xl p-5 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-             <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
-               <div className="w-4 h-1 bg-white rounded-full"></div>
-             </div>
-             <h3 className="text-xl italic font-serif tracking-wide">
-               {state.mode === 'Standard' ? 'y = ax² + bx + c' : 'y = a(x - h)² + k'}
+        <section className="bg-[#f2f2f2] border border-gray-300 rounded-xl p-4 md:p-5 shadow-sm">
+          <div className="flex items-center justify-center gap-3 mb-4">
+             <h3 className="text-xl italic font-serif tracking-wide text-gray-700">
+               {state.mode === 'Focus' 
+                 ? 'y = 1/(4p)(x - h)² + k' 
+                 : (state.mode === 'Standard' || state.mode === 'Explore') ? 'y = ax² + bx + c' : 'y = a(x - h)² + k'}
              </h3>
           </div>
 
           <div className="flex flex-col gap-4">
-             <div className="flex items-center justify-center gap-4 text-2xl font-serif py-4">
-               <span>y =</span>
-               <ValueEditor 
-                 label="a" 
-                 value={state.a} 
-                 onChange={(v) => state.mode === 'Standard' ? updateFromStandard(v, state.b, state.c) : updateFromVertex(v, state.h, state.k)} 
-                 color="text-green-700"
-               />
+             <div className="flex flex-wrap items-center justify-center gap-2 text-2xl font-serif py-2 w-full">
+               <span className="italic">y =</span>
+               {state.mode === 'Focus' ? (
+                 <div className="flex flex-col items-center">
+                   <div className="text-sm px-4">1</div>
+                   <div className="h-px w-full bg-gray-500 my-0.5"></div>
+                   <div className="text-lg flex items-center gap-0.5">
+                     4(
+                     <ValueEditor 
+                        label="p" 
+                        value={1/(4*state.a)} 
+                        onChange={(v) => updateFromVertex(1/(4*(v || 0.1)), state.h, state.k)} 
+                        color="text-red-700" 
+                      />
+                     )
+                   </div>
+                 </div>
+               ) : (
+                 <ValueEditor 
+                   label="a" 
+                   value={state.a} 
+                   onChange={(v) => (state.mode === 'Standard' || state.mode === 'Explore') ? updateFromStandard(v, state.b, state.c) : updateFromVertex(v, state.h, state.k)} 
+                   color="text-red-700"
+                 />
+               )}
                
-               {state.mode === 'Standard' ? (
+               {(state.mode === 'Standard' || state.mode === 'Explore') ? (
                  <>
-                   <span className="mx-1">x² +</span>
-                   <ValueEditor label="b" value={state.b} onChange={(v) => updateFromStandard(state.a, v, state.c)} color="text-purple-700" />
-                   <span className="mx-1">x +</span>
-                   <ValueEditor label="c" value={state.c} onChange={(v) => updateFromStandard(state.a, state.b, v)} color="text-blue-700" />
+                   <span className="mx-1 italic whitespace-nowrap text-gray-700">x² +</span>
+                   <ValueEditor label="b" value={state.b} onChange={(v) => updateFromStandard(state.a, v, state.c)} color="text-gray-900" />
+                   <span className="mx-1 italic whitespace-nowrap text-gray-700">x +</span>
+                   <ValueEditor label="c" value={state.c} onChange={(v) => updateFromStandard(state.a, state.b, v)} color="text-red-600" />
                  </>
                ) : (
                  <>
-                   <span className="mx-1">( x -</span>
-                   <ValueEditor label="h" value={state.h} onChange={(v) => updateFromVertex(state.a, v, state.k)} color="text-purple-700" />
-                   <span className="mx-1">)² +</span>
-                   <ValueEditor label="k" value={state.k} onChange={(v) => updateFromVertex(state.a, state.h, v)} color="text-blue-700" />
+                   <div className="flex items-center gap-1 text-gray-700">
+                      <span className="text-3xl">(</span>
+                      <span className="italic">x</span>
+                      <span className="mx-1">-</span>
+                   </div>
+                   <ValueEditor label="h" value={state.h} onChange={(v) => updateFromVertex(state.a, v, state.k)} color="text-gray-900" />
+                   <div className="flex items-center gap-1 text-gray-700">
+                      <span className="text-3xl">)</span>
+                      <span className="text-lg">²</span>
+                      <span className="mx-1">+</span>
+                   </div>
+                   <ValueEditor label="k" value={state.k} onChange={(v) => updateFromVertex(state.a, state.h, v)} color="text-red-600" />
                  </>
                )}
              </div>
 
-             <div className="flex justify-center gap-4 border-t border-gray-300 pt-4">
-                <button className="p-3 bg-[#f8f8f8] border border-gray-400 rounded-lg shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] hover:bg-white transition-colors">
-                  <Camera className="w-6 h-6 text-yellow-600" fill="#fbbf24" />
-                </button>
-                <button className="p-3 bg-[#f8f8f8] border border-gray-400 rounded-lg shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] hover:bg-white transition-colors">
-                   <Eraser className="w-6 h-6 text-gray-400" />
-                </button>
-             </div>
+              <div className="flex justify-center gap-4 border-t border-gray-300 pt-4">
+                 <button 
+                   onClick={() => {
+                     console.log("Taking snapshot", state.a, state.h, state.k);
+                     takeSnapshot();
+                   }}
+                   className={cn(
+                     "p-3 border rounded-lg shadow-sm transition-all active:scale-95",
+                     state.snapshot ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-300 hover:bg-white"
+                   )}
+                   title="Take Snapshot"
+                 >
+                   <Camera className={cn("w-6 h-6", state.snapshot ? "text-red-600" : "text-gray-400")} fill={state.snapshot ? "#ef4444" : "none"} />
+                 </button>
+                 <button 
+                   onClick={() => {
+                     console.log("Clearing snapshot");
+                     clearSnapshot();
+                   }}
+                   className={cn(
+                     "p-3 border rounded-lg shadow-sm transition-all active:scale-95",
+                     state.snapshot ? "bg-white border-gray-400 hover:bg-gray-50" : "bg-gray-100 border-gray-200 cursor-not-allowed opacity-50"
+                   )}
+                   disabled={!state.snapshot}
+                   title="Clear Snapshot"
+                 >
+                    <Eraser className={cn("w-6 h-6", state.snapshot ? "text-gray-600" : "text-gray-300")} />
+                 </button>
+              </div>
           </div>
         </section>
 
         {/* Toggles */}
         <section className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm flex flex-col gap-4">
            <ToggleRow 
-             label="Vertex" 
-             icon={<div className="w-4 h-4 rounded-full bg-purple-700" />} 
+             label="শীর্ষবিন্দু (Vertex)" 
+             icon={<div className="w-4 h-4 rounded-full bg-red-600" />} 
              active={state.showVertex} 
              onClick={() => setState(s => ({ ...s, showVertex: !s.showVertex }))} 
            />
            <ToggleRow 
-             label="Axis of Symmetry" 
-             icon={<div className="w-1 h-4 bg-purple-700 dashed" style={{backgroundImage: 'linear-gradient(to bottom, currentColor 50%, transparent 50%)', backgroundSize: '1px 8px'}} />} 
+             label="প্রতিসাম্য অক্ষ (Axis of Symmetry)" 
+             icon={<div className="w-1 h-4" style={{backgroundImage: 'linear-gradient(to bottom, #dc2626 50%, #000000 50%)', backgroundSize: '100% 8px'}} />} 
              active={state.showAoS} 
              onClick={() => setState(s => ({ ...s, showAoS: !s.showAoS }))} 
            />
            <ToggleRow 
-             label="Equations" 
+             label="সমীকরণ (Equations)" 
              active={state.showEquations} 
              onClick={() => setState(s => ({ ...s, showEquations: !s.showEquations }))} 
            />
            <ToggleRow 
-             label="Coordinates" 
+             label="স্থানাঙ্ক (Coordinates)" 
              active={state.showCoordinates} 
              onClick={() => setState(s => ({ ...s, showCoordinates: !s.showCoordinates }))} 
            />
            {state.mode === 'Focus' && (
              <>
                <ToggleRow 
-                 label="Focus" 
-                 icon={<div className="w-3 h-3 rounded-full bg-green-700" />} 
+                 label="উপকেন্দ্র (Focus)" 
+                 icon={<div className="w-3 h-3 rounded-full bg-black" />} 
                  active={state.showFocus} 
                  onClick={() => setState(s => ({ ...s, showFocus: !s.showFocus }))} 
                />
                <ToggleRow 
-                 label="Directrix" 
-                 icon={<div className="w-4 h-0.5 bg-green-700" />} 
+                 label="নিয়ামক (Directrix)" 
+                 icon={<div className="w-4 h-0.5 bg-red-600" />} 
                  active={state.showDirectrix} 
                  onClick={() => setState(s => ({ ...s, showDirectrix: !s.showDirectrix }))} 
                />
              </>
            )}
+        </section>
+        
+        {/* Information Panel (Equation Details) */}
+        <section className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">তথ্য (Information)</h3>
+           <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500 font-medium">শীর্ষবিন্দু (Vertex):</span>
+                <span className="font-bold text-red-600">
+                  ({Math.abs(state.h) > 1000 ? state.h.toExponential(1) : parseFloat(state.h.toFixed(2))}, 
+                   {Math.abs(state.k) > 1000 ? state.k.toExponential(1) : parseFloat(state.k.toFixed(2))})
+                </span>
+              </div>
+              {state.mode === 'Focus' && (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500 font-medium">উপকেন্দ্র (Focus):</span>
+                    <span className="font-bold text-black">
+                      ({parseFloat(state.h.toFixed(2))}, {parseFloat((state.k + 1/(4*(state.a || 0.1))).toFixed(2))})
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500 font-medium">নিয়ামক (Directrix):</span>
+                    <span className="font-bold text-red-600">
+                      y = {parseFloat((state.k - 1/(4*(state.a || 0.1))).toFixed(2))}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500 font-medium">Y-ছেদক (Y-Intercept):</span>
+                <span className="font-bold">c = {parseFloat(state.c.toFixed(2))}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500 font-medium">মূল (Roots):</span>
+                <span className="font-bold text-gray-800">
+                  {(() => {
+                    const a = state.a || 0.0001;
+                    const discriminant = state.b * state.b - 4 * a * state.c;
+                    if (discriminant < 0) return "কোন বাস্তব মূল নেই (None)";
+                    if (discriminant === 0) return `x = ${parseFloat((-state.b / (2 * a)).toFixed(2))}`;
+                    const x1 = (-state.b + Math.sqrt(discriminant)) / (2 * a);
+                    const x2 = (-state.b - Math.sqrt(discriminant)) / (2 * a);
+                    return `x = ${parseFloat(x1.toFixed(2))}, ${parseFloat(x2.toFixed(2))}`;
+                  })()}
+                </span>
+              </div>
+           </div>
         </section>
 
         <button 
@@ -252,7 +360,7 @@ export default function QuadraticSim() {
            className="mt-auto px-6 py-3 bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
-          Change Mode
+          মোড পরিবর্তন করুন (Change Mode)
         </button>
       </div>
     </div>
@@ -264,28 +372,30 @@ export default function QuadraticSim() {
 function MenuCard({ title, icon, onClick, active = false }: { title: string, icon: React.ReactNode, onClick: () => void, active?: boolean }) {
   return (
     <motion.div 
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        "cursor-pointer group flex flex-col gap-4",
-        active ? "opacity-100" : "opacity-80 hover:opacity-100"
+        "cursor-pointer group flex flex-col gap-4 bg-white p-4 rounded-2xl border-2 transition-all shadow-md hover:shadow-lg",
+        active ? "border-red-500 ring-4 ring-red-50" : "border-gray-200"
       )}
     >
       <div className={cn(
-        "aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all",
-        active ? "border-yellow-400 p-2 bg-yellow-400" : "border-transparent group-hover:border-white/20"
+        "aspect-[4/3] rounded-xl overflow-hidden transition-all",
+        active ? "bg-red-50" : "bg-gray-100"
       )}>
-        <div className="w-full h-full rounded-md overflow-hidden bg-[#f0ffff]">
+        <div className="w-full h-full p-4">
           {icon}
         </div>
       </div>
-      <h2 className={cn(
-        "text-3xl font-medium text-center transition-colors",
-        active ? "text-white" : "text-gray-400 group-hover:text-white"
-      )}>
-        {title}
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className={cn(
+          "text-xl font-bold transition-colors",
+          active ? "text-red-600" : "text-gray-700 group-hover:text-red-500"
+        )}>
+          {title}
+        </h2>
+      </div>
     </motion.div>
   );
 }
@@ -310,7 +420,7 @@ function ValueEditor({ label, value, onChange, color }: { label: string, value: 
             ▼
           </button>
        </div>
-       <span className="text-xs uppercase text-gray-400 font-bold">{label}</span>
+       <span className="text-xs italic text-gray-400 font-bold">{label}</span>
     </div>
   );
 }
@@ -334,39 +444,41 @@ function ToggleRow({ label, icon, active, onClick }: { label: string, icon?: Rea
 }
 
 function ParabolaIcon({ type }: { type: QuadMode | 'standard' | 'vertex' | 'explore' | 'focus' }) {
+  const colors = {
+    blue: "#ef4444",
+    purple: "#dc2626",
+    green: "#991b1b"
+  };
+
   return (
-    <svg viewBox="0 0 100 100" className="w-24 h-24">
-      <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ccc" />
-        </marker>
-      </defs>
-      {/* Grid */}
-      <line x1="10" y1="50" x2="90" y2="50" stroke="#eee" strokeWidth="1" />
-      <line x1="50" y1="10" x2="50" y2="90" stroke="#eee" strokeWidth="1" />
-      
-      {/* Parabola */}
-      <path 
-        d={type === 'explore' || type === 'vertex' || type === 'standard' ? "M 20 20 Q 50 80 80 20" : "M 20 80 Q 50 20 80 80"} 
-        stroke="black" 
-        strokeWidth="4" 
-        fill="none" 
-        transform={type === 'explore' ? 'scale(1, -1) translate(0, -100)' : ''}
-      />
-      
-      {/* Feature elements */}
-      {type === 'vertex' && <circle cx="50" cy="80" r="4" fill="#a855f7" />}
+    <svg viewBox="0 0 100 100" className="w-full h-full bg-transparent">
+      {/* Main Parabola Curves */}
+      {type === 'explore' && (
+        <path d="M 10 85 Q 50 -55 90 85" stroke="black" strokeWidth="3" fill="none" strokeLinecap="round" />
+      )}
+
       {type === 'standard' && (
         <>
-          <circle cx="30" cy="50" r="3" fill="#3b82f6" />
-          <circle cx="70" cy="50" r="3" fill="#3b82f6" />
-          <circle cx="50" cy="80" r="4" fill="#a855f7" />
+          <path d="M 10 15 Q 50 155 90 15" stroke="black" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <line x1="0" y1="40" x2="100" y2="40" stroke="black" strokeWidth="1" opacity="0.3" />
+          <circle cx="18" cy="40" r="5" fill="white" stroke="#dc2626" strokeWidth="3" />
+          <circle cx="82" cy="40" r="5" fill="white" stroke="#dc2626" strokeWidth="3" />
+          <circle cx="50" cy="85" r="7" fill="#dc2626" />
         </>
       )}
+
+      {type === 'vertex' && (
+        <>
+          <path d="M 10 85 Q 50 -55 90 85" stroke="black" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <circle cx="50" cy="15" r="7" fill="#dc2626" />
+        </>
+      )}
+
       {type === 'focus' && (
         <>
-          <circle cx="50" cy="35" r="3" fill="green" />
-          <line x1="10" y1="75" x2="90" y2="75" stroke="green" strokeWidth="2" strokeDasharray="4" />
+          <path d="M 10 15 Q 50 155 90 15" stroke="black" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <circle cx="50" cy="45" r="7" fill="#dc2626" />
+          <line x1="0" y1="95" x2="100" y2="95" stroke="#dc2626" strokeWidth="5" strokeDasharray="12,6" />
         </>
       )}
     </svg>
@@ -400,32 +512,117 @@ function QuadraticCanvas({ state, onChange }: { state: QuadState, onChange: (h: 
       s.draw = () => {
         const curr = stateRef.current;
         s.clear();
+        
+        // Dynamic scale based on canvas size with padding
+        const padding = 50;
+        const availableSpace = canvasSize - padding * 2;
+        scale = availableSpace / 20; // 20 units total (-10 to 10)
+
         s.translate(canvasSize / 2, canvasSize / 2);
         
         // Draw Grid
-        s.stroke(220);
+        s.stroke(242);
         s.strokeWeight(1);
         for (let i = -10; i <= 10; i++) {
-          s.line(i * scale, -canvasSize/2, i * scale, canvasSize/2);
-          s.line(-canvasSize/2, i * scale, canvasSize/2, i * scale);
+          s.line(i * scale, -availableSpace/2, i * scale, availableSpace/2);
+          s.line(-availableSpace/2, i * scale, availableSpace/2, i * scale);
         }
 
         // Axes
-        s.stroke(100);
-        s.strokeWeight(2);
-        s.line(-canvasSize/2, 0, canvasSize/2, 0);
-        s.line(0, -canvasSize/2, 0, canvasSize/2);
+        s.stroke(60);
+        s.strokeWeight(1.5);
+        // X Axis
+        s.line(-availableSpace/2 - 15, 0, availableSpace/2 + 15, 0);
+        // Y Axis
+        s.line(0, -availableSpace/2 - 15, 0, availableSpace/2 + 15);
         
+        // Tick Marks and Numbers
+        for (let i = -10; i <= 10; i++) {
+          if (i === 0) continue;
+          
+          const pos = i * scale;
+          
+          // X Ticks
+          s.stroke(60);
+          s.line(pos, -5, pos, 5);
+          
+          // Y Ticks
+          s.line(-5, pos, 5, pos);
+          
+          // Numbers (at 5 and 10)
+          if (i % 5 === 0) {
+            s.fill(60);
+            s.noStroke();
+            s.textSize(12);
+            s.textStyle(s.NORMAL);
+            // X Numbers
+            s.textAlign(s.CENTER, s.TOP);
+            s.text(i, pos, 12);
+            // Y Numbers
+            s.textAlign(s.RIGHT, s.CENTER);
+            s.text(-i, -12, pos);
+          }
+        }
+
+        // Axis Labels & Arrows (All 4 ends)
+        s.fill(60);
+        s.noStroke();
+        s.textSize(16);
+        s.textStyle(s.BOLD + s.ITALIC);
+        
+        // Positive Ends
+        s.textAlign(s.CENTER, s.CENTER);
+        s.text("x", availableSpace/2 + 30, 0);
+        s.text("y", 0, -availableSpace/2 - 30);
+        
+        // Negative Ends (Prime)
+        s.text("x'", -availableSpace/2 - 30, 0);
+        s.text("y'", 0, availableSpace/2 + 30);
+        
+        // Arrows
+        s.stroke(60);
+        s.strokeWeight(1.5);
+        // Right
+        s.line(availableSpace/2 + 15, 0, availableSpace/2 + 7, -4);
+        s.line(availableSpace/2 + 15, 0, availableSpace/2 + 7, 4);
+        // Left
+        s.line(-availableSpace/2 - 15, 0, -availableSpace/2 - 7, -4);
+        s.line(-availableSpace/2 - 15, 0, -availableSpace/2 - 7, 4);
+        // Top
+        s.line(0, -availableSpace/2 - 15, -4, -availableSpace/2 - 7);
+        s.line(0, -availableSpace/2 - 15, 4, -availableSpace/2 - 7);
+        // Bottom
+        s.line(0, availableSpace/2 + 15, -4, availableSpace/2 + 7);
+        s.line(0, availableSpace/2 + 15, 4, availableSpace/2 + 7);
+        
+        // Snapshot Curve (if any)
+        if (curr.snapshot) {
+          s.noFill();
+          s.stroke(100, 100, 100, 200); // Darker Ash color
+          s.strokeWeight(3);
+          (s.drawingContext as any).setLineDash([6, 6]);
+          s.beginShape();
+          for (let rx = -canvasSize/2; rx <= canvasSize/2; rx += 2) {
+            const ux = rx / scale;
+            const uy = curr.snapshot.a * Math.pow(ux - curr.snapshot.h, 2) + curr.snapshot.k;
+            const ry = -uy * scale;
+            if (ry > -canvasSize/2 && ry < canvasSize/2) {
+              s.vertex(rx, ry);
+            }
+          }
+          s.endShape();
+          (s.drawingContext as any).setLineDash([]);
+        }
+
         // Parabola points calculation
         s.noFill();
-        s.stroke(0);
+        s.stroke(220, 38, 38); // High-precision Red for curve
         s.strokeWeight(4);
         s.beginShape();
         for (let rx = -canvasSize/2; rx <= canvasSize/2; rx += 2) {
           const ux = rx / scale;
-          // y = a(x-h)^2 + k
           const uy = curr.a * Math.pow(ux - curr.h, 2) + curr.k;
-          const ry = -uy * scale; // Invert for cartesian
+          const ry = -uy * scale;
           if (ry > -canvasSize/2 && ry < canvasSize/2) {
             s.vertex(rx, ry);
           }
@@ -434,18 +631,26 @@ function QuadraticCanvas({ state, onChange }: { state: QuadState, onChange: (h: 
 
         // Axis of Symmetry
         if (curr.showAoS) {
-          s.stroke(168, 85, 247, 150); // purple
-          s.strokeWeight(2);
-          (s.drawingContext as any).setLineDash([5, 10]);
-          s.line(curr.h * scale, -canvasSize/2, curr.h * scale, canvasSize/2);
+          const ax = curr.h * scale;
+          // Background Black Dash
+          s.stroke(0);
+          s.strokeWeight(3);
+          s.line(ax, -canvasSize/2, ax, canvasSize/2);
+          
+          // Foreground Red Dash (Offset)
+          s.stroke(220, 38, 38);
+          (s.drawingContext as any).setLineDash([8, 8]);
+          (s.drawingContext as any).lineDashOffset = 8;
+          s.line(ax, -canvasSize/2, ax, canvasSize/2);
           (s.drawingContext as any).setLineDash([]);
+          (s.drawingContext as any).lineDashOffset = 0;
         }
 
         // Directrix
         if (curr.mode === 'Focus' && curr.showDirectrix) {
           const p_val = 1 / (4 * curr.a);
           const dy = curr.k - p_val;
-          s.stroke(22, 163, 74, 150); // green
+          s.stroke(220, 38, 38, 180);
           s.strokeWeight(3);
           (s.drawingContext as any).setLineDash([8, 8]);
           s.line(-canvasSize/2, -dy * scale, canvasSize/2, -dy * scale);
@@ -456,33 +661,99 @@ function QuadraticCanvas({ state, onChange }: { state: QuadState, onChange: (h: 
         if (curr.mode === 'Focus' && curr.showFocus) {
           const p_val = 1 / (4 * curr.a);
           const fy = curr.k + p_val;
-          s.fill(22, 163, 74);
-          s.noStroke();
-          s.circle(curr.h * scale, -fy * scale, 10);
+          s.fill(0); // Black for Focus
+          s.stroke(255);
+          s.strokeWeight(2);
+          s.circle(curr.h * scale, -fy * scale, 12);
         }
 
         // Vertex
         if (curr.showVertex) {
           const vx = curr.h * scale;
           const vy = -curr.k * scale;
-          s.fill(168, 85, 247);
+          s.fill(220, 38, 38);
           s.stroke(255);
           s.strokeWeight(2);
           s.circle(vx, vy, 16);
           
           if (curr.showCoordinates) {
             s.noStroke();
-            s.fill(168, 85, 247);
+            s.fill(220, 38, 38);
             s.textAlign(s.CENTER);
+            s.textStyle(s.BOLD);
             s.textSize(14);
             s.text(`(${curr.h.toFixed(1)}, ${curr.k.toFixed(1)})`, vx, vy + 30);
           }
         }
 
+        // Coordinate Display Box (Static)
+        s.resetMatrix();
+        s.fill(250, 250, 250, 230);
+        s.stroke(200);
+        s.strokeWeight(1);
+        s.rect(20, canvasSize - 50, 140, 30, 5);
+        s.fill(50);
+        s.noStroke();
+        s.textAlign(s.CENTER, s.CENTER);
+        s.textStyle(s.NORMAL);
+        const mx = (s.mouseX - canvasSize / 2) / scale;
+        const my = -(s.mouseY - canvasSize / 2) / scale;
+        const coordText = s.mouseX > 0 && s.mouseX < canvasSize && s.mouseY > 0 && s.mouseY < canvasSize 
+          ? `(${mx.toFixed(1)}, ${my.toFixed(1)})` 
+          : "(?, ?)";
+        s.text(coordText, 90, canvasSize - 35);
+        
+        s.translate(canvasSize / 2, canvasSize / 2);
+
+        // Equations on Canvas
+        if (curr.showEquations) {
+          s.resetMatrix();
+          const isMobile = canvasSize < 500;
+          const fontSize = isMobile ? 14 : 18;
+          const padding = isMobile ? 15 : 25;
+          
+          s.textSize(fontSize);
+          s.textStyle(s.BOLD);
+          
+          let eqStr = "";
+          if (curr.mode === 'Standard' || curr.mode === 'Explore') {
+            const aStr = curr.a.toFixed(1);
+            const bStr = Math.abs(curr.b).toFixed(1);
+            const cStr = Math.abs(curr.c).toFixed(1);
+            const bSign = curr.b >= 0 ? "+" : "-";
+            const cSign = curr.c >= 0 ? "+" : "-";
+            eqStr = `y = ${aStr}x² ${bSign} ${bStr}x ${cSign} ${cStr}`;
+          } else if (curr.mode === 'Focus') {
+            const p = 1 / (4 * curr.a);
+            const pStr = p.toFixed(1);
+            const hStr = Math.abs(curr.h).toFixed(1);
+            const kStr = Math.abs(curr.k).toFixed(1);
+            const hSign = curr.h >= 0 ? "-" : "+";
+            const kSign = curr.k >= 0 ? "+" : "-";
+            eqStr = `y = 1/(4(${pStr}))(x ${hSign} ${hStr})² ${kSign} ${kStr}`;
+          } else {
+            const aStr = curr.a.toFixed(1);
+            const hStr = Math.abs(curr.h).toFixed(1);
+            const kStr = Math.abs(curr.k).toFixed(1);
+            const hSign = curr.h >= 0 ? "-" : "+";
+            const kSign = curr.k >= 0 ? "+" : "-";
+            eqStr = `y = ${aStr}(x ${hSign} ${hStr})² ${kSign} ${kStr}`;
+          }
+
+          // Draw ash-colored background box
+          const textW = s.textWidth(eqStr);
+          s.fill(240, 242, 245, 210); // Ash color
+          s.noStroke();
+          s.rect(padding - 8, padding - 5, textW + 16, fontSize + 12, 6);
+
+          s.fill(220, 38, 38); // Red for equation
+          s.textAlign(s.LEFT, s.TOP);
+          s.text(eqStr, padding, padding);
+          s.translate(canvasSize / 2, canvasSize / 2);
+        }
+
         // Handle Vertex Interactivity
         if (s.mouseIsPressed) {
-          const mx = (s.mouseX - canvasSize / 2) / scale;
-          const my = -(s.mouseY - canvasSize / 2) / scale;
           const vx = curr.h;
           const vy = curr.k;
           

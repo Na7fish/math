@@ -9,27 +9,27 @@ export const SPECIAL_ANGLES = [
   0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360
 ];
 
-export function getSpecialLabel(deg: number): { sin: string, cos: string } | null {
+export function getSpecialLabel(deg: number): { sin: string, cos: string, tan: string, rad: string } | null {
   const d = ((deg % 360) + 360) % 360;
   
-  const labels: Record<number, { sin: string, cos: string }> = {
-    0: { cos: "1", sin: "0" },
-    30: { cos: "√3/2", sin: "1/2" },
-    45: { cos: "√2/2", sin: "√2/2" },
-    60: { cos: "1/2", sin: "√3/2" },
-    90: { cos: "0", sin: "1" },
-    120: { cos: "-1/2", sin: "√3/2" },
-    135: { cos: "-√2/2", sin: "√2/2" },
-    150: { cos: "-√3/2", sin: "1/2" },
-    180: { cos: "-1", sin: "0" },
-    210: { cos: "-√3/2", sin: "-1/2" },
-    225: { cos: "-√2/2", sin: "-√2/2" },
-    240: { cos: "-1/2", sin: "-√3/2" },
-    270: { cos: "0", sin: "-1" },
-    300: { cos: "1/2", sin: "-√3/2" },
-    315: { cos: "√2/2", sin: "-√2/2" },
-    330: { cos: "√3/2", sin: "-1/2" },
-    360: { cos: "1", sin: "0" }
+  const labels: Record<number, { sin: string, cos: string, tan: string, rad: string }> = {
+    0: { cos: "1", sin: "0", tan: "0", rad: "0" },
+    30: { cos: "√3/2", sin: "1/2", tan: "1/√3", rad: "π/6" },
+    45: { cos: "1/√2", sin: "1/√2", tan: "1", rad: "π/4" },
+    60: { cos: "1/2", sin: "√3/2", tan: "√3", rad: "π/3" },
+    90: { cos: "0", sin: "1", tan: "অসংজ্ঞায়িত(∞)", rad: "π/2" },
+    120: { cos: "-1/2", sin: "√3/2", tan: "-√3", rad: "2π/3" },
+    135: { cos: "-1/√2", sin: "1/√2", tan: "-1", rad: "3π/4" },
+    150: { cos: "-√3/2", sin: "1/2", tan: "-1/√3", rad: "5π/6" },
+    180: { cos: "-1", sin: "0", tan: "0", rad: "π" },
+    210: { cos: "-√3/2", sin: "-1/2", tan: "1/√3", rad: "7π/6" },
+    225: { cos: "-1/√2", sin: "-1/√2", tan: "1", rad: "5π/4" },
+    240: { cos: "-1/2", sin: "-√3/2", tan: "√3", rad: "4π/3" },
+    270: { cos: "0", sin: "-1", tan: "অসংজ্ঞায়িত", rad: "3π/2" },
+    300: { cos: "1/2", sin: "-√3/2", tan: "-√3", rad: "5π/3" },
+    315: { cos: "1/√2", sin: "-1/√2", tan: "-1", rad: "7π/4" },
+    330: { cos: "√3/2", sin: "-1/2", tan: "-1/√3", rad: "11π/6" },
+    360: { cos: "1", sin: "0", tan: "0", rad: "2π" }
   };
 
   // Find if we are close to a special angle
