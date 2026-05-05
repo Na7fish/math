@@ -10,10 +10,12 @@ import {
   ChevronLeft, 
   Activity, 
   Target, 
-  ChevronRight
+  ChevronRight,
+  Shapes
 } from 'lucide-react';
 import { cn, getSpecialLabel, toBengaliNumber, SPECIAL_ANGLES } from './lib/utils';
 import QuadraticSim from './QuadraticSim';
+import GeometrySim from './GeometrySim';
 
 // --- Utils ---
 const parseMath = (input: string): number | null => {
@@ -37,7 +39,7 @@ const parseMath = (input: string): number | null => {
 };
 
 // --- Types ---
-type ActiveSim = 'Trigonometry' | 'Quadratics' | 'Home';
+type ActiveSim = 'Trigonometry' | 'Quadratics' | 'Geometry' | 'Home';
 
 interface SimState {
   angle: number; // in degrees
@@ -133,34 +135,41 @@ export default function App() {
             <h1 className="text-2xl font-bold text-red-600">10MS Math Laboratory</h1>
          </header>
          <main className="flex-1 p-6 md:p-12 flex flex-col items-center justify-center max-w-5xl mx-auto w-full">
-            <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center text-gray-800">সিমুলেশন নির্বাচন করুন</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center text-gray-800">সহজে গণিত বুঝি</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-               <SimChoiceCard 
-                 title="ত্রিকোণমিতি: রেডিয়ান ও ডিগ্রি পরিমাপের সম্পর্ক" 
-                 desc="কোণ, সাইন, কোসাইন এবং ট্যাঞ্জেন্টের জ্যামিতিক ধারণা"
-                 icon={<Activity className="w-12 h-12 text-red-600" />}
-                 onClick={() => {
-                   setState({
-                     angle: 0,
-                     unit: 'deg',
-                     showTriangle: false,
-                     showSymmetry: false,
-                     showArc: true,
-                     isAutoRotating: false,
-                     rotationSpeed: 1,
-                     isBlinkingArc: true,
-                     isBlinkingLines: true,
-                   });
-                   setActiveSim('Trigonometry');
-                 }}
-               />
-               <SimChoiceCard 
-                 title="বীজগণিত: দ্বিঘাত সমীকরণ" 
-                 desc="Standard Form, Vertex Form এবং Parabola এর বৈশিষ্ট্য"
-                 icon={<Target className="w-12 h-12 text-red-600" />}
-                 onClick={() => setActiveSim('Quadratics')}
-               />
+                <SimChoiceCard 
+                  title="ত্রিকোণমিতি: রেডিয়ান ও ডিগ্রি পরিমাপের সম্পর্ক" 
+                  desc="কোণ, সাইন, কোসাইন এবং ট্যাঞ্জেন্টের জ্যামিতিক ধারণা"
+                  icon={<Activity className="w-12 h-12 text-red-600" />}
+                  onClick={() => {
+                    setState({
+                      angle: 0,
+                      unit: 'deg',
+                      showTriangle: false,
+                      showSymmetry: false,
+                      showArc: true,
+                      isAutoRotating: false,
+                      rotationSpeed: 1,
+                      isBlinkingArc: true,
+                      isBlinkingLines: true,
+                    });
+                    setActiveSim('Trigonometry');
+                  }}
+                />
+                <SimChoiceCard 
+                  title="বীজগণিত: দ্বিঘাত সমীকরণ" 
+                  desc="Standard Form, Vertex Form এবং Parabola এর বৈশিষ্ট্য"
+                  icon={<Target className="w-12 h-12 text-red-600" />}
+                  onClick={() => setActiveSim('Quadratics')}
+                />
+                <SimChoiceCard 
+                  title="জ্যামিতির সকল আলোচনা" 
+                  desc="বিভিন্ন চ্যাপ্টার এর উপপাদ্য নিয়ে বিস্তারিত ধারণা"
+                  icon={<Shapes className="w-12 h-12 text-red-600" />}
+                  subject="গণিত"
+                  onClick={() => setActiveSim('Geometry')}
+                />
             </div>
          </main>
        </div>
@@ -179,14 +188,16 @@ export default function App() {
             <ChevronLeft width="18" height="18" className="text-gray-600 stroke-[2.5]" />
           </button>
           <h1 className="text-sm md:text-xl font-bold truncate">
-            {activeSim === 'Trigonometry' ? 'ইউনিট সার্কেল সিমুলেশন' : 'দ্বিঘাত সমীকরণ গ্রাফিং'}
+            {activeSim === 'Trigonometry' ? 'ইউনিট সার্কেল সিমুলেশন' : 
+             activeSim === 'Quadratics' ? 'দ্বিঘাত সমীকরণ ল্যাব' : 'জ্যামিতি ল্যাব'}
           </h1>
         </div>
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
           <span className="hidden sm:inline text-sm font-medium text-gray-500">
-             {activeSim === 'Trigonometry' ? 'অধ্যায় ৮: ত্রিকোণমিতি' : 'অধ্যায় ৫: সমীকরণ'}
+             {activeSim === 'Trigonometry' ? 'অধ্যায় ৮: ত্রিকোণমিতি' : 
+              activeSim === 'Quadratics' ? 'অধ্যায় ৫: সমীকরণ' : ''}
           </span>
-          <div className="px-2 py-0.5 md:px-3 md:py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">নবম-দশম শ্রেণি: উচ্চতর গণিত</div>
+          <div className="px-2 py-0.5 md:px-3 md:py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">নবম-দশম শ্রেণি: গণিত</div>
         </div>
       </header>
 
@@ -415,8 +426,12 @@ export default function App() {
             </section>
           </div>
         </main>
-      ) : (
+      ) : activeSim === 'Quadratics' ? (
         <QuadraticSim />
+      ) : (
+        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+          <GeometrySim />
+        </main>
       )}
 
       {/* Footer */}
@@ -429,7 +444,7 @@ export default function App() {
 
 // --- Subcomponents ---
 
-function SimChoiceCard({ title, desc, icon, onClick }: { title: string, desc: string, icon: React.ReactNode, onClick: () => void }) {
+function SimChoiceCard({ title, desc, icon, subject = "উচ্চতর গণিত", onClick }: { title: string, desc: string, icon: React.ReactNode, subject?: string, onClick: () => void }) {
   return (
     <motion.button 
       whileHover={{ scale: 1.02 }}
@@ -437,7 +452,7 @@ function SimChoiceCard({ title, desc, icon, onClick }: { title: string, desc: st
       onClick={onClick}
       className="bg-white p-8 rounded-2xl border-2 border-gray-100 hover:border-red-500 transition-all text-left shadow-lg flex flex-col gap-4 group relative"
     >
-      <div className="absolute top-4 right-4 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-[9px] md:text-[10px] font-bold border border-gray-200">নবম-দশম শ্রেণি: উচ্চতর গণিত</div>
+      <div className="absolute top-4 right-4 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-[9px] md:text-[10px] font-bold border border-gray-200">নবম-দশম শ্রেণি: {subject}</div>
       <div className="p-4 bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors w-fit">
         {icon}
       </div>
