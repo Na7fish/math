@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Info, MousePointer2, Play, RotateCcw, BookOpen, ChevronRight } from 'lucide-react';
 import { cn } from './lib/utils';
+import MathText from './components/MathText';
 
 interface Point {
   x: number;
@@ -19,7 +20,7 @@ const SidebarProof = ({ steps, step, setStep }: { steps: any[], step: number, se
         </div>
       </div>
       <p className="text-gray-800 text-lg leading-relaxed font-sans whitespace-pre-line">
-        {steps[step].content}
+        <MathText math={steps[step].content} />
       </p>
       
       <div className="flex items-center gap-4 mt-4">
@@ -577,16 +578,31 @@ const Theorem38: React.FC = () => {
 };
 
 // --- Main Component ---
-const GeometrySim: React.FC = () => {
-  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
-  const [selectedTheorem, setSelectedTheorem] = useState<number | null>(null);
+interface GeometrySimProps {
+  selectedChapter: number | null;
+  setSelectedChapter: (chapter: number | null) => void;
+  selectedTheorem: number | null;
+  setSelectedTheorem: (theorem: number | null) => void;
+}
 
+const GeometrySim: React.FC<GeometrySimProps> = ({ 
+  selectedChapter, 
+  setSelectedChapter, 
+  selectedTheorem, 
+  setSelectedTheorem 
+}) => {
   const chapters = [
     { 
       id: 6, 
       title: "অধ্যায় ৬ঃ রেখা, কোণ ও ত্রিভুজ", 
       theorems: [
-        { id: 14, title: "উপপাদ্য ১৪", desc: "ত্রিভুজের যেকোনো দুই বাহুর মধ্যবিন্দুর সংযোজক রেখাংশ তৃতীয় বাহুর সমান্তরাল এবং দৈর্ঘ্য তার অর্ধেক।" },
+        { id: 14, title: "উপপাদ্য ১৪", desc: "ত্রিভুজের যেকোনো দুই বাহুর মধ্যবিন্দুর সংযোজক রেখাংশ তৃতীয় বাহুর সমান্তরাল এবং দৈর্ঘ্য তার অর্ধেক।" }
+      ]
+    },
+    {
+      id: 8,
+      title: "অধ্যায় ৮: বৃত্ত",
+      theorems: [
         { id: 18, title: "উপপাদ্য ১৮", desc: "বৃত্তের সকল সমান জ্যা কেন্দ্র থেকে সমদূরবর্তী।" }
       ]
     },
@@ -601,7 +617,7 @@ const GeometrySim: React.FC = () => {
       id: 15, 
       title: "অধ্যায় ১৫ঃ ক্ষেত্রফল সম্পর্কিত উপপাদ্য ও সম্পাদ্য", 
       theorems: [
-        { id: 38, title: "উপপাদ্য ৩৮", desc: "পিথাগোরাসের উপপাদ্য: সমকোণী ত্রিভুজের অতিভুজের উপর অঙ্কিত বর্গক্ষেত্রের ক্ষেত্রফল অপর দুই বাহুর উপর অঙ্কিত বর্গক্ষেত্রদ্বয়ের ক্ষেত্রফলের সমষ্টির সমান।" }
+        { id: 38, title: "উপপাদ্য ৩৮", desc: "পিথাগোরাসের উপপাদ্য: সমকোণী ত্রিভুজের অতিভুজের উপর অঙ্কিত বর্গক্ষেত্রের ক্ষেত্রফল অপর দুই বাহুর উপর অঙ্কিত বর্গক্ষেত্রদ্বয়ের ক্ষেত্রফলের সমষ্টির সমান (AC^2 = AB^2 + BC^2)।" }
       ]
     }
   ];
@@ -621,6 +637,7 @@ const GeometrySim: React.FC = () => {
           {chapters.map((chapter) => (
             <motion.button
               key={chapter.id}
+              id={`tour-chapter-${chapter.id}`}
               whileHover={{ scale: 1.02, translateY: -4 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedChapter(chapter.id)}
@@ -682,7 +699,7 @@ const GeometrySim: React.FC = () => {
                   <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-red-500 transition-colors" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{t.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{t.desc}</p>
+                <p className="text-gray-500 text-sm leading-relaxed"><MathText math={t.desc} /></p>
               </motion.button>
             ))}
           </div>

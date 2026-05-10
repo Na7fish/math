@@ -6,16 +6,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import p5 from 'p5';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronLeft, 
-  Activity, 
-  Target, 
+import {
+  ChevronLeft,
+  Activity,
+  Target,
   ChevronRight,
-  Shapes
+  Shapes,
+  Play,
+  BookOpen,
+  Info
 } from 'lucide-react';
+import MathText from './components/MathText';
 import { cn, getSpecialLabel, toBengaliNumber, SPECIAL_ANGLES } from './lib/utils';
 import QuadraticSim from './QuadraticSim';
 import GeometrySim from './GeometrySim';
+import { GuidedTour } from './GuidedTour';
+import { WelcomeModal } from './components/WelcomeModal';
 
 // --- Utils ---
 const parseMath = (input: string): number | null => {
@@ -29,7 +35,7 @@ const parseMath = (input: string): number | null => {
       .replace(/√/g, 'Math.sqrt')     // Handle remaining √ as Math.sqrt
       .replace(/sqrt/g, 'Math.sqrt')  // Ensure sqrt is Math.sqrt
       .replace(/pi/g, 'Math.PI');
-    
+
     // Clean up spaces and evaluate
     const result = new Function(`return ${clean.replace(/\s+/g, '')}`)();
     return typeof result === 'number' && !isNaN(result) ? result : null;
@@ -53,10 +59,108 @@ interface SimState {
   isBlinkingLines: boolean;
 }
 
+const tourSteps = [
+  {
+    target: 'center',
+    emoji: '👋',
+    title: '10MS ম্যাথ ল্যাবে স্বাগতম!',
+    content: 'চলুন একটি দ্রুত ট্যুরে তিনটি সিমুলেশন ল্যাব ঘুরে দেখি। যেকোনো সময় স্কিপ করতে পারবেন।'
+  },
+  {
+    target: '#tour-feature-cards',
+    emoji: '🗂️',
+    title: 'ল্যাব নির্বাচন করুন',
+    content: 'এই কার্ডগুলোতে ক্লিক করে তিনটি ভিন্ন ম্যাথ ল্যাবে প্রবেশ করা যাবে।'
+  },
+  {
+    target: '#tour-quickstart',
+    emoji: '⚡',
+    title: 'দ্রুত শুরু করুন',
+    content: 'নির্দিষ্ট বিষয় সরাসরি খুলতে Quick Start বাটনগুলো ব্যবহার করুন।'
+  },
+  {
+    target: '#tour-trig-card',
+    emoji: '📐',
+    title: 'ত্রিকোণমিতি ল্যাব',
+    content: 'এই কার্ডে ক্লিক করলে ইউনিট সার্কেল সিমুলেশন শুরু হবে যেখানে সাইন, কোসাইন ও ট্যানজেন্ট ইন্টারেক্টিভভাবে শেখা যাবে।'
+  },
+  {
+    target: '#trig-angle-control',
+    emoji: '🎯',
+    title: 'কোণ নিয়ন্ত্রণ করুন',
+    navigate: 'Trigonometry',
+    content: 'এখানে কোণের মান টাইপ করুন অথবা ক্যানভাসে বিন্দুটি টেনে কোণ পরিবর্তন করুন।'
+  },
+  {
+    target: '#trig-canvas-area',
+    emoji: '⭕',
+    title: 'ইউনিট সার্কেল',
+    navigate: 'Trigonometry',
+    content: 'এই বৃত্তের উপর বিন্দুটি ড্র্যাগ করুন। লাল বিন্দু দিয়ে কোণ পরিবর্তন হবে এবং সব মান রিয়েল-টাইমে আপডেট হবে।'
+  },
+  {
+    target: '#trig-values-panel',
+    emoji: '📊',
+    title: 'ত্রিকোণমিতিক মান',
+    navigate: 'Trigonometry',
+    content: 'cos θ, sin θ এবং tan θ এর মান এখানে দেখা যাবে। মান সরাসরি এডিট করেও কোণ পরিবর্তন করা সম্ভব!'
+  },
+  {
+    target: '#trig-wave-graph',
+    emoji: '〰️',
+    title: 'সাইন ও কোসাইন গ্রাফ',
+    navigate: 'Trigonometry',
+    content: 'সবুজ রেখা সাইন এবং নীল রেখা কোসাইন দেখাচ্ছে। কোণ পরিবর্তন করলে লাল দাগ গ্রাফে সরে যাবে।'
+  },
+  {
+    target: '#trig-settings',
+    emoji: '⚙️',
+    title: 'ভিজ্যুয়াল সেটিংস',
+    navigate: 'Trigonometry',
+    content: 'রেখার ব্লিংকিং চালু/বন্ধ করতে এই টগলগুলো ব্যবহার করুন।'
+  },
+  {
+    target: 'center',
+    emoji: '📈',
+    title: 'বীজগণিত ল্যাব',
+    navigate: 'Quadratics',
+    content: 'এখন দ্বিঘাত সমীকরণ ল্যাবে আসা হয়েছে। এখানে প্যারাবোলার সহগ পরিবর্তন করে গ্রাফ রিয়েল-টাইমে পর্যবেক্ষণ করা যাবে।'
+  },
+  {
+    target: 'center',
+    emoji: '📐',
+    title: 'জ্যামিতি ল্যাব',
+    navigate: 'Geometry',
+    content: 'সবশেষে জ্যামিতি ল্যাব! এখানে অধ্যায় ও উপপাদ্য নির্বাচন করে অ্যানিমেটেড ধাপে ধাপে প্রমাণ দেখা যাবে।'
+  },
+  {
+    target: 'center',
+    emoji: '🎉',
+    title: 'ট্যুর সম্পন্ন!',
+    navigate: 'Home',
+    content: 'আপনি এখন ১০এমএস ম্যাথ ল্যাবের সব ফিচার সম্পর্কে জানেন। যেকোনো ল্যাব বেছে নিন এবং গণিত শেখা শুরু করুন!'
+  }
+];
+
 // --- Components ---
 
 export default function App() {
   const [activeSim, setActiveSim] = useState<ActiveSim>('Home');
+  const [showTour, setShowTour] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+  const [selectedTheorem, setSelectedTheorem] = useState<number | null>(null);
+  const [language, setLanguage] = useState<'BN' | 'EN'>('BN');
+
+  // Show welcome modal on first ever visit
+  useEffect(() => {
+    const seen = localStorage.getItem('10ms-welcomed');
+    if (!seen) {
+      const t = setTimeout(() => setShowWelcome(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
   const [state, setState] = useState<SimState>({
     angle: 0,
     unit: 'deg',
@@ -69,15 +173,68 @@ export default function App() {
     isBlinkingLines: true,
   });
 
+  // Initialize state from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sim = params.get('sim');
+    const chapter = params.get('chapter');
+    const theorem = params.get('theorem');
+    const angle = params.get('angle');
+    const unit = params.get('unit');
+    const lang = params.get('lang');
+
+    if (lang === 'EN') setLanguage('EN');
+    else if (lang === 'BN') setLanguage('BN');
+
+    if (sim === 'trig') {
+      setActiveSim('Trigonometry');
+      setState(prev => ({
+        ...prev,
+        angle: angle ? parseInt(angle) : 0,
+        unit: (unit === 'rad' ? 'rad' : 'deg') as 'deg' | 'rad'
+      }));
+    }
+    else if (sim === 'quad') setActiveSim('Quadratics');
+    else if (sim === 'geom') {
+      setActiveSim('Geometry');
+      if (chapter) setSelectedChapter(parseInt(chapter));
+      if (theorem) setSelectedTheorem(parseInt(theorem));
+    }
+
+    setTimeout(() => {
+      // Do nothing, we show home page by default
+    }, 800);
+  }, []);
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('lang', language);
+    if (activeSim === 'Trigonometry') {
+      params.set('sim', 'trig');
+      params.set('angle', Math.round(state.angle).toString());
+      params.set('unit', state.unit);
+    }
+    else if (activeSim === 'Quadratics') params.set('sim', 'quad');
+    else if (activeSim === 'Geometry') {
+      params.set('sim', 'geom');
+      if (selectedChapter) params.set('chapter', selectedChapter.toString());
+      if (selectedTheorem) params.set('theorem', selectedTheorem.toString());
+    }
+
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+  }, [activeSim, selectedChapter, selectedTheorem, state.angle, state.unit, language]);
+
   const rad = (state.angle * Math.PI) / 180;
   const cosVal = Math.cos(rad);
   const sinVal = Math.sin(rad);
   const tanVal = Math.abs(Math.cos(rad)) < 0.001 ? Infinity : Math.tan(rad);
-  
+
   const quadrant = Math.floor(((state.angle % 360) + 360) % 360 / 90) + 1;
   const specialLabels = getSpecialLabel(state.angle);
 
-   const [angleInput, setAngleInput] = useState("");
+  const [angleInput, setAngleInput] = useState("");
   const [cosInput, setCosInput] = useState(cosVal.toFixed(3));
   const [sinInput, setSinInput] = useState(sinVal.toFixed(3));
   const [tanInput, setTanInput] = useState(tanVal === Infinity ? "∞" : tanVal.toFixed(3));
@@ -93,18 +250,18 @@ export default function App() {
 
   useEffect(() => {
     if (!state.isAutoRotating) {
-       const special = getSpecialLabel(state.angle);
-       if (special) {
-          setCosInput(special.cos);
-          setSinInput(special.sin);
-          setTanInput(special.tan);
-          setAngleInput(state.unit === 'deg' ? Math.round(state.angle).toString() : special.rad);
-       } else {
-          setCosInput(cosVal.toFixed(3));
-          setSinInput(sinVal.toFixed(3));
-          setTanInput(tanVal === Infinity ? "∞" : tanVal.toFixed(3));
-          setAngleInput(state.unit === 'deg' ? Math.round(state.angle).toString() : (rad / Math.PI).toFixed(2) + 'π');
-       }
+      const special = getSpecialLabel(state.angle);
+      if (special) {
+        setCosInput(special.cosRaw);
+        setSinInput(special.sinRaw);
+        setTanInput(special.tanRaw);
+        setAngleInput(state.unit === 'deg' ? Math.round(state.angle).toString() : special.radRaw);
+      } else {
+        setCosInput(cosVal.toFixed(3));
+        setSinInput(sinVal.toFixed(3));
+        setTanInput(tanVal === Infinity ? "∞" : tanVal.toFixed(3));
+        setAngleInput(state.unit === 'deg' ? Math.round(state.angle).toString() : (rad / Math.PI).toFixed(2) + 'π');
+      }
     }
   }, [state.angle, state.unit, state.isAutoRotating]);
 
@@ -129,51 +286,146 @@ export default function App() {
   }, [state.isAutoRotating, state.rotationSpeed]);
 
   if (activeSim === 'Home') {
-     return (
-       <div className="min-h-screen bg-gray-50 flex flex-col font-bangla text-ten-ink">
-         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-center px-6 shrink-0 shadow-sm">
-            <h1 className="text-2xl font-bold text-red-600">10MS Math Laboratory</h1>
-         </header>
-         <main className="flex-1 p-6 md:p-12 flex flex-col items-center justify-center max-w-5xl mx-auto w-full">
-            <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center text-gray-800">সহজে গণিত বুঝি</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-                <SimChoiceCard 
-                  title="ত্রিকোণমিতি: রেডিয়ান ও ডিগ্রি পরিমাপের সম্পর্ক" 
-                  desc="কোণ, সাইন, কোসাইন এবং ট্যাঞ্জেন্টের জ্যামিতিক ধারণা"
-                  icon={<Activity className="w-12 h-12 text-red-600" />}
-                  onClick={() => {
-                    setState({
-                      angle: 0,
-                      unit: 'deg',
-                      showTriangle: false,
-                      showSymmetry: false,
-                      showArc: true,
-                      isAutoRotating: false,
-                      rotationSpeed: 1,
-                      isBlinkingArc: true,
-                      isBlinkingLines: true,
-                    });
-                    setActiveSim('Trigonometry');
-                  }}
-                />
-                <SimChoiceCard 
-                  title="বীজগণিত: দ্বিঘাত সমীকরণ" 
-                  desc="Standard Form, Vertex Form এবং Parabola এর বৈশিষ্ট্য"
-                  icon={<Target className="w-12 h-12 text-red-600" />}
-                  onClick={() => setActiveSim('Quadratics')}
-                />
-                <SimChoiceCard 
-                  title="জ্যামিতির সকল আলোচনা" 
-                  desc="বিভিন্ন চ্যাপ্টার এর উপপাদ্য নিয়ে বিস্তারিত ধারণা"
-                  icon={<Shapes className="w-12 h-12 text-red-600" />}
-                  subject="গণিত"
-                  onClick={() => setActiveSim('Geometry')}
-                />
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col font-bangla text-ten-ink">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 shadow-sm">
+          <h1 className="text-2xl font-bold text-red-600">10MS Math Laboratory</h1>
+          <div className="flex items-center gap-4">
+            <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+              <button
+                onClick={() => setLanguage('BN')}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                  language === 'BN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                BN
+              </button>
+              <button
+                onClick={() => setLanguage('EN')}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                  language === 'EN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                EN
+              </button>
             </div>
-         </main>
-       </div>
-     );
+            <button
+              onClick={() => setShowTour(true)}
+              className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-red-600 hover:text-white transition-all border border-red-100"
+            >
+              <Play className="w-3 h-3 fill-current" /> টিউটোরিয়াল শুরু করি
+            </button>
+          </div>
+        </header>
+        <main className="flex-1 flex flex-col items-center overflow-y-auto">
+          {/* Hero Banner */}
+          <div className="w-full bg-red-600 p-12 md:p-16 text-white text-center relative overflow-hidden shrink-0">
+            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mt-32 blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-red-400/20 rounded-full -mr-32 -mb-32 blur-3xl" />
+
+            <motion.h2
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="text-4xl md:text-6xl font-black mb-4 tracking-tight"
+            >
+              10MS ম্যাথ ল্যাবে স্বাগতম!
+            </motion.h2>
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-red-100 text-xl md:text-2xl font-medium opacity-90 max-w-2xl mx-auto"
+            >
+              গণিতের রহস্য উন্মোচন করো — নিজে পরীক্ষা করে শেখো
+            </motion.p>
+          </div>
+
+          <div className="max-w-6xl w-full p-8 md:p-12">
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mb-8 flex items-center gap-4">
+              কি কি করা যাবে?
+              <div className="h-px flex-1 bg-gray-200" />
+            </h3>
+
+            <div id="tour-feature-cards" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              <HomeFeatureCard
+                id="tour-trig-card"
+                icon={<Target className="w-8 h-8" />}
+                title="ত্রিকোণমিতি এক্সপ্লোরেশন"
+                desc="ইউনিট সার্কেল এবং সাইন-কোসাইন গ্রাফ সরাসরি পরিবর্তন করে শিখুন। রেডিয়ান ও ডিগ্রির সম্পর্ক জানুন।"
+                color="blue"
+                onClick={() => {
+                  setState(prev => ({ ...prev, angle: 0, unit: 'deg' }));
+                  setActiveSim('Trigonometry');
+                }}
+              />
+              <HomeFeatureCard
+                id="tour-quad-card"
+                icon={<Activity className="w-8 h-8" />}
+                title="দ্বিঘাত সমীকরণ ল্যাব"
+                desc="প্যারাবোলা এবং এর সহগগুলোর প্রভাব রিয়েল-টাইমে পর্যবেক্ষণ করুন। শীর্ষবিন্দু ও মূল নির্ণয় করুন।"
+                color="red"
+                onClick={() => setActiveSim('Quadratics')}
+              />
+              <HomeFeatureCard
+                id="tour-geom-card"
+                icon={<Shapes className="w-8 h-8" />}
+                title="জ্যামিতি ল্যাব (বৃত্ত)"
+                desc="বৃত্তের গুরুত্বপূর্ণ উপপাদ্যগুলো অ্যানিমেশনের মাধ্যমে ধাপে ধাপে শিখুন। ভিজ্যুয়াল প্রমাণ দেখুন।"
+                color="purple"
+                onClick={() => setActiveSim('Geometry')}
+              />
+            </div>
+
+            {/* Quick Actions / Presets Style */}
+            <div id="tour-quickstart" className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+              <h4 className="text-gray-900 font-black text-xl mb-6">দ্রুত শুরু করুন (Quick Start)</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button onClick={() => { setActiveSim('Trigonometry'); setState(s => ({ ...s, angle: 30 })); }} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group">
+                  <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">ত্রিকোণমিতি: ৩০° কোণ</span>
+                  <span className="text-xs text-gray-400">সরাসরি ৩০ ডিগ্রি মান দেখুন</span>
+                </button>
+                <button onClick={() => setActiveSim('Quadratics')} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group">
+                  <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">বীজগণিত: দ্বিঘাত সমীকরণ</span>
+                  <span className="text-xs text-gray-400">গ্রাফিং শুরু করুন</span>
+                </button>
+                <button onClick={() => { setActiveSim('Geometry'); setSelectedChapter(8); setSelectedTheorem(18); }} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group">
+                  <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">জ্যামিতি: বৃত্তের উপপাদ্য ১৮</span>
+                  <span className="text-xs text-gray-400">অ্যানিমেশন দেখুন</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+        {showWelcome && (
+          <WelcomeModal
+            onStartTour={() => {
+              localStorage.setItem('10ms-welcomed', '1');
+              setShowWelcome(false);
+              setShowTour(true);
+            }}
+            onClose={() => {
+              localStorage.setItem('10ms-welcomed', '1');
+              setShowWelcome(false);
+            }}
+          />
+        )}
+        {showTour && (
+          <GuidedTour
+            steps={tourSteps}
+            onFinish={() => setShowTour(false)}
+            onSkip={() => setShowTour(false)}
+            onNavigate={(sim) => {
+              if (sim === 'Trigonometry') { setState(prev => ({ ...prev, angle: 45 })); setActiveSim('Trigonometry'); }
+              else if (sim === 'Quadratics') setActiveSim('Quadratics');
+              else if (sim === 'Geometry') { setSelectedChapter(null); setSelectedTheorem(null); setActiveSim('Geometry'); }
+              else if (sim === 'Home') setActiveSim('Home');
+            }}
+          />
+        )}
+      </div>
+    );
   }
 
   return (
@@ -181,20 +433,40 @@ export default function App() {
       {/* Header */}
       <header className="min-h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 md:px-6 shrink-0 sticky top-0 z-50">
         <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
-          <button 
+          <button
             onClick={() => setActiveSim('Home')}
             className="p-1.5 md:p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors shrink-0"
           >
             <ChevronLeft width="18" height="18" className="text-gray-600 stroke-[2.5]" />
           </button>
           <h1 className="text-sm md:text-xl font-bold truncate">
-            {activeSim === 'Trigonometry' ? 'ইউনিট সার্কেল সিমুলেশন' : 
-             activeSim === 'Quadratics' ? 'দ্বিঘাত সমীকরণ ল্যাব' : 'জ্যামিতি ল্যাব'}
+            {activeSim === 'Trigonometry' ? 'ইউনিট সার্কেল সিমুলেশন' :
+              activeSim === 'Quadratics' ? 'দ্বিঘাত সমীকরণ ল্যাব' : 'জ্যামিতি ল্যাব'}
           </h1>
         </div>
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <button
+              onClick={() => setLanguage('BN')}
+              className={cn(
+                "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
+                language === 'BN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              BN
+            </button>
+            <button
+              onClick={() => setLanguage('EN')}
+              className={cn(
+                "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
+                language === 'EN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              EN
+            </button>
+          </div>
           <span className="hidden sm:inline text-sm font-medium text-gray-500">
-             {activeSim === 'Trigonometry' ? 'অধ্যায় ৮: ত্রিকোণমিতি' : 
+            {activeSim === 'Trigonometry' ? 'অধ্যায় ৮: ত্রিকোণমিতি' :
               activeSim === 'Quadratics' ? 'অধ্যায় ৫: সমীকরণ' : ''}
           </span>
           <div className="px-2 py-0.5 md:px-3 md:py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">নবম-দশম শ্রেণি: গণিত</div>
@@ -204,14 +476,14 @@ export default function App() {
       {activeSim === 'Trigonometry' ? (
         <main className="flex-1 p-2 md:p-5 grid grid-cols-12 gap-3 md:gap-4 max-w-7xl mx-auto w-full auto-rows-min lg:auto-rows-fr overflow-y-auto">
           {/* Top Bento Row: Angle Control */}
-          <div className="col-span-12 bento-card flex flex-col sm:flex-row items-center px-4 md:px-6 py-3 md:py-4 justify-between bg-white gap-4">
+          <div id="trig-angle-control" className="col-span-12 bento-card flex flex-col sm:flex-row items-center px-4 md:px-6 py-3 md:py-4 justify-between bg-white gap-4">
             <div className="flex items-center gap-4 md:gap-8 w-full sm:w-auto justify-between sm:justify-start">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">কোণের মান নির্ণয় করি</span>
                 <div className="flex items-center gap-2">
-                  <input 
+                  <input
                     ref={angleInputRef}
-                    type="text" 
+                    type="text"
                     value={angleInput}
                     onChange={(e) => {
                       setAngleInput(e.target.value);
@@ -242,187 +514,184 @@ export default function App() {
           </div>
 
           {/* Left Grid: Simulation Canvas */}
-          <div className="col-span-12 lg:col-span-7 lg:row-span-5 flex flex-col gap-4">
+          <div id="trig-canvas-area" className="col-span-12 lg:col-span-7 lg:row-span-5 flex flex-col gap-4">
             <div className="bento-card relative overflow-hidden flex items-center justify-center bg-white aspect-square lg:aspect-auto flex-1 min-h-[400px]">
-               <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
-                 <span className={cn(
-                   "text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-tighter shadow-sm border-2",
-                   quadrant === 1 ? "bg-gray-50 text-gray-800 border-gray-200" :
-                   quadrant === 2 ? "bg-gray-50 text-gray-800 border-gray-200" :
-                   quadrant === 3 ? "bg-gray-50 text-gray-800 border-gray-200" :
-                   "bg-gray-50 text-gray-800 border-gray-200"
-                 )}>
-                   QUADRANT {['I', 'II', 'III', 'IV'][quadrant - 1]} ({toBengaliNumber(quadrant)}ম পাদ)
-                 </span>
-               </div>
-               
-               <UnitCircleCanvas state={state} onAngleChange={updateAngle} />
+              <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
+                <span className={cn(
+                  "text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-tighter shadow-sm border-2",
+                  quadrant === 1 ? "bg-gray-50 text-gray-800 border-gray-200" :
+                    quadrant === 2 ? "bg-gray-50 text-gray-800 border-gray-200" :
+                      quadrant === 3 ? "bg-gray-50 text-gray-800 border-gray-200" :
+                        "bg-gray-50 text-gray-800 border-gray-200"
+                )}>
+                  QUADRANT
+                </span>
+              </div>
+
+              <UnitCircleCanvas state={state} onAngleChange={updateAngle} />
             </div>
           </div>
 
           {/* Right Grid: Stats & Controls */}
           <div className="col-span-12 lg:col-span-5 lg:row-span-5 flex flex-col gap-4 overflow-y-auto">
-            
+
             {/* Coordinates Bento Box */}
-            <section className="bento-card p-5 flex flex-col justify-start">
+            <section id="trig-values-panel" className="bento-card p-5 flex flex-col justify-start">
               <span className="text-xs font-bold text-red-600 uppercase tracking-widest pb-1">কোণের মান অনুযায়ী সকল তথ্য</span>
-              
+
               <div className="mt-6 space-y-4">
                 {/* Detailed Summary Info - Always Visible */}
                 <div className="grid grid-cols-2 gap-4 pb-6 border-b border-gray-100">
                   <div className="bg-red-50 p-3 rounded-xl border border-red-100">
                     <span className="text-[10px] text-red-600 font-bold uppercase block mb-1">রেডিয়ান মান</span>
                     <span className="text-xl font-bold text-red-700 font-mono">
-                      {specialLabels ? specialLabels.rad : (rad).toFixed(2) + ' rad'}
+                      {specialLabels ? <MathText math={specialLabels.rad} /> : (rad).toFixed(2) + ' rad'}
                     </span>
                   </div>
                   <div className="bg-red-50 p-3 rounded-xl border border-red-100">
                     <span className="text-[10px] text-red-600 font-bold uppercase block mb-1">স্থানাঙ্ক বিন্দু</span>
-                    <span className="text-sm font-bold text-red-700 font-mono">
-                      ({specialLabels ? specialLabels.cos : cosVal.toFixed(3)}, {specialLabels ? specialLabels.sin : sinVal.toFixed(3)})
+                    <span className="text-xl font-bold text-red-700 font-mono">
+                      ({specialLabels ? <MathText math={specialLabels.cos} /> : cosVal.toFixed(3)}, {specialLabels ? <MathText math={specialLabels.sin} /> : sinVal.toFixed(3)})
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="space-y-6 pt-2">
-                <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
-                  <div className="flex flex-col">
-                    <span className="text-lg font-bold text-info">cos θ <span className="text-xs opacity-60 font-normal ml-1">(ভূজ)</span></span>
-                    <span className="text-[10px] text-info opacity-50 uppercase font-bold tracking-tighter">X = COS(θ)</span>
-                  </div>
-                  <div className="text-right flex flex-col items-end justify-center">
-                    <input 
-                      type="text"
-                      value={cosInput}
-                      onChange={(e) => {
-                        setCosInput(e.target.value);
-                        const val = parseMath(e.target.value);
-                        if (val !== null && val >= -1.01 && val <= 1.01) {
-                          const currentAngle = (state.angle % 360 + 360) % 360;
-                          let newAngle = (Math.acos(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
-                          if (currentAngle > 180) newAngle = 360 - newAngle;
-                          updateAngle(newAngle);
+                  <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
+                    <div className="flex flex-col">
+                      <span className="text-lg font-bold text-info">cos θ <span className="text-xs opacity-60 font-normal ml-1">(ভূজ)</span></span>
+                      <span className="text-[10px] text-info opacity-50 font-bold tracking-tighter">X = Cos(θ)</span>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <input
+                        type="text"
+                        value={cosInput}
+                        onChange={(e) => {
                           setCosInput(e.target.value);
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      className="text-2xl font-bold mono text-info w-32 text-right border-b-2 border-transparent focus:border-info bg-transparent outline-none p-0"
-                      placeholder="cos θ"
-                    />
-                    <div className="h-4">
-                      {specialLabels?.cos && <div className="text-[10px] text-info font-bold uppercase">{specialLabels.cos}</div>}
+                          const val = parseMath(e.target.value);
+                          if (val !== null && val >= -1.01 && val <= 1.01) {
+                            const currentAngle = (state.angle % 360 + 360) % 360;
+                            let newAngle = (Math.acos(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
+                            if (currentAngle > 180) newAngle = 360 - newAngle;
+                            updateAngle(newAngle);
+                            setCosInput(e.target.value);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        className="text-2xl font-bold mono text-info w-32 text-right border-b-2 border-transparent focus:border-info bg-transparent outline-none p-0"
+                        placeholder="cos θ"
+                      />
+                      <div className="h-4">
+                        {specialLabels?.cos && <div className="text-[10px] text-info font-bold uppercase"><MathText math={specialLabels.cos} /></div>}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
-                  <div className="flex flex-col">
-                    <span className="text-lg font-bold text-success">sin θ <span className="text-xs opacity-60 font-normal ml-1">(কোটি)</span></span>
-                    <span className="text-[10px] text-success opacity-50 uppercase font-bold tracking-tighter">Y = SIN(θ)</span>
-                  </div>
-                  <div className="text-right flex flex-col items-end justify-center">
-                    <input 
-                      type="text"
-                      value={sinInput}
-                      onChange={(e) => {
-                        setSinInput(e.target.value);
-                        const val = parseMath(e.target.value);
-                        if (val !== null && val >= -1.01 && val <= 1.01) {
-                          const currentAngle = (state.angle % 360 + 360) % 360;
-                          let newAngle = (Math.asin(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
-                          const isInLeftHemisphere = currentAngle > 90 && currentAngle < 270;
-                          if (isInLeftHemisphere) newAngle = 180 - newAngle;
-                          if (newAngle < 0) newAngle += 360;
-                          updateAngle(newAngle);
+                  <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
+                    <div className="flex flex-col">
+                      <span className="text-lg font-bold text-success">sin θ <span className="text-xs opacity-60 font-normal ml-1">(কোটি)</span></span>
+                      <span className="text-[10px] text-success opacity-50 font-bold tracking-tighter">Y = Sin(θ)</span>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <input
+                        type="text"
+                        value={sinInput}
+                        onChange={(e) => {
                           setSinInput(e.target.value);
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      className="text-2xl font-bold mono text-success w-32 text-right border-b-2 border-transparent focus:border-success bg-transparent outline-none p-0"
-                      placeholder="sin θ"
-                    />
-                    <div className="h-4">
-                      {specialLabels?.sin && <div className="text-[10px] text-success font-bold uppercase">{specialLabels.sin}</div>}
+                          const val = parseMath(e.target.value);
+                          if (val !== null && val >= -1.01 && val <= 1.01) {
+                            const currentAngle = (state.angle % 360 + 360) % 360;
+                            let newAngle = (Math.asin(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
+                            const isInLeftHemisphere = currentAngle > 90 && currentAngle < 270;
+                            if (isInLeftHemisphere) newAngle = 180 - newAngle;
+                            if (newAngle < 0) newAngle += 360;
+                            updateAngle(newAngle);
+                            setSinInput(e.target.value);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        className="text-2xl font-bold mono text-success w-32 text-right border-b-2 border-transparent focus:border-success bg-transparent outline-none p-0"
+                        placeholder="sin θ"
+                      />
+                      <div className="h-4">
+                        {specialLabels?.sin && <div className="text-[10px] text-success font-bold uppercase"><MathText math={specialLabels.sin} /></div>}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between min-h-[68px]">
-                  <div className="flex flex-col">
-                    <span className="text-lg font-bold text-warn">tan θ <span className="text-xs opacity-60 font-normal ml-1">(ঢাল)</span></span>
-                    <span className="text-[10px] text-warn opacity-50 uppercase font-bold tracking-tighter">m = SIN/COS</span>
-                  </div>
-                  <div className="text-right flex flex-col items-end justify-center">
-                    <input 
-                      type="text"
-                      value={tanInput}
-                      onChange={(e) => {
-                        setTanInput(e.target.value);
-                        const val = parseMath(e.target.value);
-                        if (val !== null) {
-                          const currentAngle = (state.angle % 360 + 360) % 360;
-                          let newAngle = (Math.atan(val) * 180) / Math.PI;
-                          const isLeft = currentAngle > 90 && currentAngle < 270;
-                          if (isLeft) newAngle += 180;
-                          if (newAngle < 0) newAngle += 360;
-                          updateAngle(newAngle);
+                  <div className="flex items-center justify-between min-h-[68px]">
+                    <div className="flex flex-col">
+                      <span className="text-lg font-bold text-warn">tan θ <span className="text-xs opacity-60 font-normal ml-1">(ঢাল)</span></span>
+                      <span className="text-xs text-warn font-bold tracking-tighter">
+                        <MathText math="m = \frac{\sin(\theta)}{\cos(\theta)}" />
+                      </span>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <input
+                        type="text"
+                        value={tanInput}
+                        onChange={(e) => {
                           setTanInput(e.target.value);
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      className={cn(
-                        "font-bold mono text-warn text-right border-b-2 border-transparent focus:border-warn bg-transparent outline-none p-0",
-                        tanInput.length > 8 ? "text-xl w-60" : "text-2xl w-32"
-                      )}
-                      placeholder="tan θ"
-                    />
-                    <div className="h-4" />
+                          const val = parseMath(e.target.value);
+                          if (val !== null) {
+                            const currentAngle = (state.angle % 360 + 360) % 360;
+                            let newAngle = (Math.atan(val) * 180) / Math.PI;
+                            const isLeft = currentAngle > 90 && currentAngle < 270;
+                            if (isLeft) newAngle += 180;
+                            if (newAngle < 0) newAngle += 360;
+                            updateAngle(newAngle);
+                            setTanInput(e.target.value);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        className={cn(
+                          "font-bold mono text-warn text-right border-b-2 border-transparent focus:border-warn bg-transparent outline-none p-0",
+                          tanInput.length > 8 ? "text-xl w-60" : "text-2xl w-32"
+                        )}
+                        placeholder="tan θ"
+                      />
+                      <div className="h-4" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
 
             {/* Settings / Toggles */}
-            <section className="bento-card p-5 flex flex-col gap-4">
+            <section id="trig-settings" className="bento-card p-5 flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">সেটিংস</span>
               </div>
-              
+
               <div className="flex flex-wrap gap-2">
-                <SmallToggle 
-                  label="X এবং Y রেখা ব্লিঙ্কিং" 
-                  active={state.isBlinkingLines} 
-                  onClick={() => setState(prev => ({ ...prev, isBlinkingLines: !prev.isBlinkingLines }))} 
+                <SmallToggle
+                  label="X এবং Y রেখা ব্লিঙ্কিং"
+                  active={state.isBlinkingLines}
+                  onClick={() => setState(prev => ({ ...prev, isBlinkingLines: !prev.isBlinkingLines }))}
                 />
-                <SmallToggle 
-                  label="রেডিয়ান রেখা ব্লিঙ্কিং" 
-                  active={state.isBlinkingArc} 
-                  onClick={() => setState(prev => ({ ...prev, isBlinkingArc: !prev.isBlinkingArc }))} 
-                />
-                <SmallToggle 
-                  label="অটো রোটেশন" 
-                  active={state.isAutoRotating} 
-                  onClick={() => setState(s => ({ ...s, isAutoRotating: !s.isAutoRotating }))} 
+                <SmallToggle
+                  label="রেডিয়ান রেখা ব্লিঙ্কিং"
+                  active={state.isBlinkingArc}
+                  onClick={() => setState(prev => ({ ...prev, isBlinkingArc: !prev.isBlinkingArc }))}
                 />
               </div>
             </section>
 
             {/* Wave Graph Section */}
-            <section className="bento-card p-5 flex flex-col gap-3 bg-white">
-               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sin(সাইন) ও Cos(কোসাইন) এর গ্রাফ</span>
-               <div className="h-40 w-full">
-                 <WaveGraph angle={state.angle} />
-               </div>
-               <div className="flex justify-between items-center px-1">
-                 <div className="flex items-center gap-2">
-                   <div className="w-3 h-1 bg-[#1CAB55] rounded-full" />
-                   <span className="text-[10px] font-bold text-gray-500">Sin(সাইন)</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <div className="w-3 h-1 bg-[#274FE3] rounded-full" />
-                   <span className="text-[10px] font-bold text-gray-500">Cos(কোসাইন)</span>
-                 </div>
-               </div>
+            <section id="trig-wave-graph" className="bento-card p-5 flex flex-col gap-3 bg-white">
+              <span className="text-[10px] font-bold text-gray-400 tracking-widest">Sin(সাইন) ও Cos(কোসাইন) এর গ্রাফ</span>
+              <div className="h-40 w-full">
+                <WaveGraph angle={state.angle} />
+              </div>
+              <div className="flex justify-between items-center px-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-1 bg-[#1CAB55] rounded-full" />
+                  <span className="text-[10px] font-bold text-gray-500">Sin(সাইন)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-1 bg-[#274FE3] rounded-full" />
+                  <span className="text-[10px] font-bold text-gray-500">Cos(কোসাইন)</span>
+                </div>
+              </div>
             </section>
           </div>
         </main>
@@ -430,7 +699,12 @@ export default function App() {
         <QuadraticSim />
       ) : (
         <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
-          <GeometrySim />
+          <GeometrySim
+            selectedChapter={selectedChapter}
+            setSelectedChapter={setSelectedChapter}
+            selectedTheorem={selectedTheorem}
+            setSelectedTheorem={setSelectedTheorem}
+          />
         </main>
       )}
 
@@ -438,15 +712,56 @@ export default function App() {
       <footer className="py-4 text-center text-[10px] text-gray-400 font-sans border-t bg-white uppercase tracking-widest shrink-0">
         © 2026 10 Minute School | Science Division | SSC Prep
       </footer>
+
+      {showTour && (
+        <GuidedTour
+          steps={tourSteps}
+          onFinish={() => setShowTour(false)}
+          onSkip={() => setShowTour(false)}
+          onNavigate={(sim) => {
+            if (sim === 'Trigonometry') { setState(prev => ({ ...prev, angle: 45 })); setActiveSim('Trigonometry'); }
+            else if (sim === 'Quadratics') setActiveSim('Quadratics');
+            else if (sim === 'Geometry') { setSelectedChapter(null); setSelectedTheorem(null); setActiveSim('Geometry'); }
+            else if (sim === 'Home') setActiveSim('Home');
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function HomeFeatureCard({ id, icon, title, desc, color, onClick }: any) {
+  const colors: Record<string, string> = {
+    blue: "bg-blue-50 text-blue-600",
+    red: "bg-red-50 text-red-600",
+    purple: "bg-purple-50 text-purple-600",
+    green: "bg-green-50 text-green-600"
+  };
+
+  return (
+    <motion.div
+      id={id}
+      whileHover={{ y: -5 }}
+      onClick={onClick}
+      className="group p-6 bg-white hover:bg-red-50/20 rounded-[32px] border border-gray-100 hover:border-red-100 transition-all cursor-pointer flex flex-col gap-4 shadow-sm hover:shadow-md"
+    >
+      <div className={cn("w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", colors[color])}>
+        {icon}
+      </div>
+      <div>
+        <h4 className="font-black text-gray-900 mb-1.5 text-lg tracking-tight">{title}</h4>
+        <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+      </div>
+    </motion.div>
   );
 }
 
 // --- Subcomponents ---
 
-function SimChoiceCard({ title, desc, icon, subject = "উচ্চতর গণিত", onClick }: { title: string, desc: string, icon: React.ReactNode, subject?: string, onClick: () => void }) {
+function SimChoiceCard({ id, title, desc, icon, subject = "উচ্চতর গণিত", onClick }: any) {
   return (
-    <motion.button 
+    <motion.button
+      id={id}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
@@ -483,12 +798,12 @@ function SignPill({ label, isPositive }: { label: string, isPositive: boolean })
 
 function SmallToggle({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer",
-        active 
-          ? "bg-green-50 border-green-200 text-green-700" 
+        active
+          ? "bg-green-50 border-green-200 text-green-700"
           : "bg-gray-50 border-gray-200 text-gray-500 opacity-60 grayscale"
       )}
     >
@@ -512,7 +827,7 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
 
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     if (p5InstanceRef.current) {
       p5InstanceRef.current.remove();
       p5InstanceRef.current = null;
@@ -538,19 +853,19 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
       };
 
       s.windowResized = () => {
-         const container = containerRef.current;
-         if (container) {
-           const w = container.clientWidth || 400;
-           const h = container.clientHeight || 400;
-           canvasSize = Math.min(w, h);
-           radius = canvasSize * 0.35;
-           s.resizeCanvas(canvasSize, canvasSize);
-         }
+        const container = containerRef.current;
+        if (container) {
+          const w = container.clientWidth || 400;
+          const h = container.clientHeight || 400;
+          canvasSize = Math.min(w, h);
+          radius = canvasSize * 0.35;
+          s.resizeCanvas(canvasSize, canvasSize);
+        }
       };
 
       s.draw = () => {
         const currentState = stateRef.current;
-        s.background(255); 
+        s.background(255);
         s.push();
         s.translate(s.width / 2, s.height / 2);
 
@@ -570,7 +885,7 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
         const [r, g, b, a] = colors[quad];
         s.fill(r, g, b, a);
         s.arc(0, 0, radius * 2, radius * 2, -((quad + 1) * Math.PI) / 2, -(quad * Math.PI) / 2);
-        
+
         // Highlight active quadrant border
         s.stroke(r, g, b, 100);
         s.strokeWeight(1);
@@ -581,28 +896,28 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
         s.strokeWeight(1);
         (s.drawingContext as any).setLineDash([5, 5]);
         [45, 135, 225, 315].forEach(a => {
-           const ar = (a * Math.PI) / 180;
-           s.line(0, 0, radius * Math.cos(ar), -radius * Math.sin(ar));
+          const ar = (a * Math.PI) / 180;
+          s.line(0, 0, radius * Math.cos(ar), -radius * Math.sin(ar));
         });
         (s.drawingContext as any).setLineDash([]);
 
         // Main Axes - Bold Black
         s.stroke(0, 0, 0);
         s.strokeWeight(2.5);
-        s.line(-radius - 40, 0, radius + 40, 0); 
-        s.line(0, -radius - 40, 0, radius + 40); 
-        
+        s.line(-radius - 40, 0, radius + 40, 0);
+        s.line(0, -radius - 40, 0, radius + 40);
+
         // Labels
         s.fill(0, 0, 0);
         s.noStroke();
         s.textSize(16);
         s.textStyle(s.BOLD);
         s.textAlign(s.CENTER, s.CENTER);
-        
+
         // X and X'
         s.text('X', radius + 60, 0);
         s.text("X'", -radius - 60, 0);
-        
+
         // Y and Y'
         s.text('Y', 0, -radius - 60);
         s.text("Y'", 0, radius + 60);
@@ -617,10 +932,10 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
         // Arc Visualization
         const isArcVisible = !currentState.isBlinkingArc || (s.frameCount % 60 < 30);
         if (isArcVisible) {
-           s.stroke(0); // Changed to Black
-           s.strokeWeight(4);
-           s.noFill();
-           s.arc(0, 0, radius * 2, radius * 2, -currentRad, 0);
+          s.stroke(0); // Changed to Black
+          s.strokeWeight(4);
+          s.noFill();
+          s.arc(0, 0, radius * 2, radius * 2, -currentRad, 0);
         }
 
         // Projection Lines
@@ -628,34 +943,34 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
         if (areLinesVisible) {
           s.strokeWeight(1.5);
           (s.drawingContext as any).setLineDash([5, 5]);
-          s.stroke('#274FE3'); 
+          s.stroke('#274FE3');
           s.line(x, y, x, 0);
-          s.stroke('#1CAB55'); 
+          s.stroke('#1CAB55');
           s.line(x, y, 0, y);
           (s.drawingContext as any).setLineDash([]);
         }
 
         // Symmetry Ghost Points
         if (currentState.showSymmetry) {
-           const symAngles = [
-             (180 - currentState.angle) % 360,
-             (180 + currentState.angle) % 360,
-             (360 - currentState.angle) % 360
-           ];
-           s.strokeWeight(1);
-           s.stroke(17, 24, 39, 50);
-           symAngles.forEach(a => {
-             const ar = (a * Math.PI) / 180;
-             const sx = radius * Math.cos(ar);
-             const sy = -radius * Math.sin(ar);
-             s.noFill();
-             (s.drawingContext as any).setLineDash([5, 5]);
-             s.line(0, 0, sx, sy);
-             (s.drawingContext as any).setLineDash([]);
-             s.fill(255);
-             s.stroke(17, 24, 39, 80);
-             s.circle(sx, sy, 8);
-           });
+          const symAngles = [
+            (180 - currentState.angle) % 360,
+            (180 + currentState.angle) % 360,
+            (360 - currentState.angle) % 360
+          ];
+          s.strokeWeight(1);
+          s.stroke(17, 24, 39, 50);
+          symAngles.forEach(a => {
+            const ar = (a * Math.PI) / 180;
+            const sx = radius * Math.cos(ar);
+            const sy = -radius * Math.sin(ar);
+            s.noFill();
+            (s.drawingContext as any).setLineDash([5, 5]);
+            s.line(0, 0, sx, sy);
+            (s.drawingContext as any).setLineDash([]);
+            s.fill(255);
+            s.stroke(17, 24, 39, 80);
+            s.circle(sx, sy, 8);
+          });
         }
 
         // Projection Lines (Handled above with blinking)
@@ -663,9 +978,9 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
         // Reference Triangle
         if (currentState.showTriangle) {
           s.stroke(17, 24, 39, 40);
-          s.line(0, 0, x, y); 
-          s.line(x, y, x, 0); 
-          s.line(0, 0, x, 0); 
+          s.line(0, 0, x, y);
+          s.line(x, y, x, 0);
+          s.line(0, 0, x, 0);
           const sz = 10;
           const sx = x > 0 ? -1 : 1;
           const sy = y > 0 ? 1 : -1;
@@ -682,11 +997,11 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
         // Draggable Point
         const isHovered = s.dist(s.mouseX - s.width / 2, s.mouseY - s.height / 2, x, y) < 20;
         const special = SPECIAL_ANGLES.find(a => Math.abs(((currentState.angle % 360) + 360) % 360 - a) < 2);
-        
+
         if (special !== undefined) {
-           s.noStroke();
-           s.fill(0, 0, 0, 20);
-           s.circle(x, y, 30);
+          s.noStroke();
+          s.fill(0, 0, 0, 20);
+          s.circle(x, y, 30);
         }
 
         s.stroke(255);
@@ -696,16 +1011,16 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
 
         // Values at point
         if (isHovered || dragging || special !== undefined) {
-           s.noStroke();
-           s.fill(17, 24, 39);
-           s.textAlign(s.LEFT);
-           s.textSize(11);
-           const lab = getSpecialLabel(currentState.angle);
-           if (lab) {
-              s.text(`(${lab.cos}, ${lab.sin})`, x + 12, y - 5);
-           } else {
-              s.text(`(${(x/radius).toFixed(2)}, ${(-y/radius).toFixed(2)})`, x + 12, y - 5);
-           }
+          s.noStroke();
+          s.fill(17, 24, 39);
+          s.textAlign(s.LEFT);
+          s.textSize(11);
+          const lab = getSpecialLabel(currentState.angle);
+          if (lab) {
+            s.text(`(${lab.cosRaw}, ${lab.sinRaw})`, x + 12, y - 5);
+          } else {
+            s.text(`(${(x / radius).toFixed(2)}, ${(-y / radius).toFixed(2)})`, x + 12, y - 5);
+          }
         }
 
         // Handle Dragging
@@ -727,7 +1042,7 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
     };
 
     p5InstanceRef.current = new p5(sketch, containerRef.current);
-    
+
     return () => {
       if (p5InstanceRef.current) {
         p5InstanceRef.current.remove();
@@ -735,7 +1050,7 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
       }
       if (containerRef.current) containerRef.current.innerHTML = '';
     };
-  }, []); 
+  }, []);
 
   return <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-white cursor-crosshair overflow-hidden" />;
 }
@@ -743,7 +1058,7 @@ function UnitCircleCanvas({ state, onAngleChange }: { state: SimState, onAngleCh
 function WaveGraph({ angle }: { angle: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !containerRef.current) return;
@@ -760,7 +1075,7 @@ function WaveGraph({ angle }: { angle: number }) {
     const w = rect.width;
     const h = rect.height;
     ctx.clearRect(0, 0, w, h);
-    
+
     const centerY = h / 2;
     const amp = h / 2 - 20;
     const padding = 25;
@@ -832,11 +1147,11 @@ function WaveGraph({ angle }: { angle: number }) {
     // Tracking Dots
     const sy = centerY - Math.sin((normAngle * Math.PI) / 180) * amp;
     const cy = centerY - Math.cos((normAngle * Math.PI) / 180) * amp;
-    
+
     ctx.fillStyle = '#ef4444';
     ctx.beginPath(); ctx.arc(indicatorX, sy, 5, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
-    
+
     ctx.beginPath(); ctx.arc(indicatorX, cy, 5, 0, Math.PI * 2); ctx.fill();
     ctx.stroke();
 
@@ -852,8 +1167,8 @@ function WaveGraph({ angle }: { angle: number }) {
 
   return (
     <div ref={containerRef} className="w-full h-full bg-white rounded-lg">
-      <canvas 
-        ref={canvasRef} 
+      <canvas
+        ref={canvasRef}
         className="w-full h-full"
       />
     </div>

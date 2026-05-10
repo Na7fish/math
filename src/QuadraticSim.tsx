@@ -19,6 +19,7 @@ import {
   Move
 } from 'lucide-react';
 import { cn } from './lib/utils';
+import MathText from './components/MathText';
 
 // --- Types ---
 type QuadMode = 'Explore' | 'Standard' | 'Vertex' | 'Focus';
@@ -175,9 +176,11 @@ export default function QuadraticSim() {
         <section className="bg-[#f2f2f2] border border-gray-300 rounded-xl p-4 md:p-5 shadow-sm">
           <div className="flex items-center justify-center gap-3 mb-4">
              <h3 className="text-xl italic font-serif tracking-wide text-gray-700">
-               {state.mode === 'Focus' 
-                 ? 'y = 1/(4p)(x - h)² + k' 
-                 : (state.mode === 'Standard' || state.mode === 'Explore') ? 'y = ax² + bx + c' : 'y = a(x - h)² + k'}
+               <MathText math={
+                 state.mode === 'Focus' 
+                   ? 'y = \\frac{1}{4p}(x - h)^2 + k' 
+                   : (state.mode === 'Standard' || state.mode === 'Explore') ? 'y = ax^2 + bx + c' : 'y = a(x - h)^2 + k'
+               } />
              </h3>
           </div>
 
@@ -245,7 +248,8 @@ export default function QuadraticSim() {
                    )}
                    title="Take Snapshot"
                  >
-                   <Camera className={cn("w-6 h-6", state.snapshot ? "text-red-600" : "text-gray-400")} fill={state.snapshot ? "#ef4444" : "none"} />
+                   <Camera className="w-3.5 h-3.5" fill={state.snapshot ? "currentColor" : "none"} />
+                    অন্যান্য মানের সাথে তুলনা করি
                  </button>
                  <button 
                    onClick={() => {
@@ -259,7 +263,8 @@ export default function QuadraticSim() {
                    disabled={!state.snapshot}
                    title="Clear Snapshot"
                  >
-                    <Eraser className={cn("w-6 h-6", state.snapshot ? "text-gray-600" : "text-gray-300")} />
+                    <Eraser className="w-3.5 h-3.5" />
+                     মুছে ফেলি
                  </button>
               </div>
           </div>
@@ -314,8 +319,7 @@ export default function QuadraticSim() {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500 font-medium">শীর্ষবিন্দু (Vertex):</span>
                 <span className="font-bold text-red-600">
-                  ({Math.abs(state.h) > 1000 ? state.h.toExponential(1) : parseFloat(state.h.toFixed(2))}, 
-                   {Math.abs(state.k) > 1000 ? state.k.toExponential(1) : parseFloat(state.k.toFixed(2))})
+                  <MathText math={`(${Math.abs(state.h) > 1000 ? state.h.toExponential(1) : parseFloat(state.h.toFixed(2))}, ${Math.abs(state.k) > 1000 ? state.k.toExponential(1) : parseFloat(state.k.toFixed(2))})`} />
                 </span>
               </div>
               {state.mode === 'Focus' && (
@@ -323,20 +327,20 @@ export default function QuadraticSim() {
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500 font-medium">উপকেন্দ্র (Focus):</span>
                     <span className="font-bold text-black">
-                      ({parseFloat(state.h.toFixed(2))}, {parseFloat((state.k + 1/(4*(state.a || 0.1))).toFixed(2))})
+                      <MathText math={`(${parseFloat(state.h.toFixed(2))}, ${parseFloat((state.k + 1/(4*(state.a || 0.1))).toFixed(2))})`} />
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500 font-medium">নিয়ামক (Directrix):</span>
                     <span className="font-bold text-red-600">
-                      y = {parseFloat((state.k - 1/(4*(state.a || 0.1))).toFixed(2))}
+                      <MathText math={`y = ${parseFloat((state.k - 1/(4*(state.a || 0.1))).toFixed(2))}`} />
                     </span>
                   </div>
                 </>
               )}
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500 font-medium">Y-ছেদক (Y-Intercept):</span>
-                <span className="font-bold">c = {parseFloat(state.c.toFixed(2))}</span>
+                <span className="font-bold"><MathText math={`c = ${parseFloat(state.c.toFixed(2))}`} /></span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500 font-medium">মূল (Roots):</span>
@@ -345,10 +349,10 @@ export default function QuadraticSim() {
                     const a = state.a || 0.0001;
                     const discriminant = state.b * state.b - 4 * a * state.c;
                     if (discriminant < 0) return "কোন বাস্তব মূল নেই (None)";
-                    if (discriminant === 0) return `x = ${parseFloat((-state.b / (2 * a)).toFixed(2))}`;
+                    if (discriminant === 0) return <MathText math={`x = ${parseFloat((-state.b / (2 * a)).toFixed(2))}`} />;
                     const x1 = (-state.b + Math.sqrt(discriminant)) / (2 * a);
                     const x2 = (-state.b - Math.sqrt(discriminant)) / (2 * a);
-                    return `x = ${parseFloat(x1.toFixed(2))}, ${parseFloat(x2.toFixed(2))}`;
+                    return <MathText math={`x = ${parseFloat(x1.toFixed(2))}, ${parseFloat(x2.toFixed(2))}`} />;
                   })()}
                 </span>
               </div>
@@ -411,7 +415,7 @@ function ValueEditor({ label, value, onChange, color }: { label: string, value: 
             ▲
           </button>
           <div className={cn("px-3 py-1 bg-white border border-gray-300 rounded shadow-inner min-w-[3rem] text-center font-bold", color)}>
-            {Number.isInteger(value) ? value : value.toFixed(1)}
+            {parseFloat(value.toFixed(1))}
           </div>
           <button 
              onClick={() => onChange(value - 0.1)}
@@ -717,26 +721,26 @@ function QuadraticCanvas({ state, onChange }: { state: QuadState, onChange: (h: 
           
           let eqStr = "";
           if (curr.mode === 'Standard' || curr.mode === 'Explore') {
-            const aStr = curr.a.toFixed(1);
-            const bStr = Math.abs(curr.b).toFixed(1);
-            const cStr = Math.abs(curr.c).toFixed(1);
-            const bSign = curr.b >= 0 ? "+" : "-";
-            const cSign = curr.c >= 0 ? "+" : "-";
+            const aStr = parseFloat(curr.a.toFixed(1));
+            const bStr = Math.abs(parseFloat(curr.b.toFixed(1)));
+            const cStr = Math.abs(parseFloat(curr.c.toFixed(1)));
+            const bSign = parseFloat(curr.b.toFixed(1)) >= 0 ? "+" : "-";
+            const cSign = parseFloat(curr.c.toFixed(1)) >= 0 ? "+" : "-";
             eqStr = `y = ${aStr}x² ${bSign} ${bStr}x ${cSign} ${cStr}`;
           } else if (curr.mode === 'Focus') {
             const p = 1 / (4 * curr.a);
-            const pStr = p.toFixed(1);
-            const hStr = Math.abs(curr.h).toFixed(1);
-            const kStr = Math.abs(curr.k).toFixed(1);
-            const hSign = curr.h >= 0 ? "-" : "+";
-            const kSign = curr.k >= 0 ? "+" : "-";
+            const pStr = parseFloat(p.toFixed(1));
+            const hStr = Math.abs(parseFloat(curr.h.toFixed(1)));
+            const kStr = Math.abs(parseFloat(curr.k.toFixed(1)));
+            const hSign = parseFloat(curr.h.toFixed(1)) >= 0 ? "-" : "+";
+            const kSign = parseFloat(curr.k.toFixed(1)) >= 0 ? "+" : "-";
             eqStr = `y = 1/(4(${pStr}))(x ${hSign} ${hStr})² ${kSign} ${kStr}`;
           } else {
-            const aStr = curr.a.toFixed(1);
-            const hStr = Math.abs(curr.h).toFixed(1);
-            const kStr = Math.abs(curr.k).toFixed(1);
-            const hSign = curr.h >= 0 ? "-" : "+";
-            const kSign = curr.k >= 0 ? "+" : "-";
+            const aStr = parseFloat(curr.a.toFixed(1));
+            const hStr = Math.abs(parseFloat(curr.h.toFixed(1)));
+            const kStr = Math.abs(parseFloat(curr.k.toFixed(1)));
+            const hSign = parseFloat(curr.h.toFixed(1)) >= 0 ? "-" : "+";
+            const kSign = parseFloat(curr.k.toFixed(1)) >= 0 ? "+" : "-";
             eqStr = `y = ${aStr}(x ${hSign} ${hStr})² ${kSign} ${kStr}`;
           }
 
