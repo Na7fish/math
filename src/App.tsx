@@ -372,6 +372,7 @@ export default function App() {
               }}
             />
           )}
+          <FeedbackButton simulationName="10ms-home" />
         </div>
       </LanguageContext.Provider>
     );
@@ -435,8 +436,8 @@ export default function App() {
             {/* Top Bento Row: Angle Control */}
             <div id="trig-angle-control" className="col-span-12 bento-card flex flex-col sm:flex-row items-center px-4 md:px-6 py-3 md:py-4 justify-between bg-white gap-4">
               <div className="flex items-center gap-4 md:gap-8 w-full sm:w-auto justify-between sm:justify-start">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">{tr('setAngleLabel', language)}</span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs md:text-[10px] uppercase tracking-wider text-gray-500 font-bold">{tr('setAngleLabel', language)}</span>
                   <div className="flex items-center gap-2">
                     <input
                       ref={angleInputRef}
@@ -451,10 +452,10 @@ export default function App() {
                         }
                       }}
                       onFocus={(e) => e.target.select()}
-                      className="text-lg md:text-2xl font-bold w-20 md:w-32 border-none px-2 py-1 focus:ring-0 mono bg-gray-50 rounded-lg shadow-inner text-gray-700"
+                      className="text-base md:text-2xl font-bold w-28 md:w-32 border-none px-3 py-1.5 focus:ring-0 bg-gray-50 rounded-lg shadow-inner text-gray-700 transition-all focus:bg-white focus:shadow-md"
                       placeholder={tr('anglePlaceholder', language)}
                     />
-                    <span className="text-lg md:text-2xl font-bold -ml-2">{state.unit === 'deg' ? '°' : ''}</span>
+                    <span className="text-lg md:text-2xl font-bold -ml-1 text-gray-400">{state.unit === 'deg' ? '°' : ''}</span>
                   </div>
                 </div>
               </div>
