@@ -22,6 +22,10 @@ import QuadraticSim from './QuadraticSim';
 import GeometrySim from './GeometrySim';
 import { GuidedTour } from './GuidedTour';
 import { WelcomeModal } from './components/WelcomeModal';
+import { FeedbackButton } from './components/FeedbackButton';
+import { LanguageContext } from './lib/LanguageContext';
+import { tr } from './lib/translations';
+
 
 // --- Utils ---
 const parseMath = (input: string): number | null => {
@@ -59,98 +63,32 @@ interface SimState {
   isBlinkingLines: boolean;
 }
 
-const tourSteps = [
-  {
-    target: 'center',
-    emoji: '👋',
-    title: '10MS ম্যাথ ল্যাবে স্বাগতম!',
-    content: 'চলুন একটি দ্রুত ট্যুরে তিনটি সিমুলেশন ল্যাব ঘুরে দেখি। যেকোনো সময় স্কিপ করতে পারবেন।'
-  },
-  {
-    target: '#tour-feature-cards',
-    emoji: '🗂️',
-    title: 'ল্যাব নির্বাচন করুন',
-    content: 'এই কার্ডগুলোতে ক্লিক করে তিনটি ভিন্ন ম্যাথ ল্যাবে প্রবেশ করা যাবে।'
-  },
-  {
-    target: '#tour-quickstart',
-    emoji: '⚡',
-    title: 'দ্রুত শুরু করুন',
-    content: 'নির্দিষ্ট বিষয় সরাসরি খুলতে Quick Start বাটনগুলো ব্যবহার করুন।'
-  },
-  {
-    target: '#tour-trig-card',
-    emoji: '📐',
-    title: 'ত্রিকোণমিতি ল্যাব',
-    content: 'এই কার্ডে ক্লিক করলে ইউনিট সার্কেল সিমুলেশন শুরু হবে যেখানে সাইন, কোসাইন ও ট্যানজেন্ট ইন্টারেক্টিভভাবে শেখা যাবে।'
-  },
-  {
-    target: '#trig-angle-control',
-    emoji: '🎯',
-    title: 'কোণ নিয়ন্ত্রণ করুন',
-    navigate: 'Trigonometry',
-    content: 'এখানে কোণের মান টাইপ করুন অথবা ক্যানভাসে বিন্দুটি টেনে কোণ পরিবর্তন করুন।'
-  },
-  {
-    target: '#trig-canvas-area',
-    emoji: '⭕',
-    title: 'ইউনিট সার্কেল',
-    navigate: 'Trigonometry',
-    content: 'এই বৃত্তের উপর বিন্দুটি ড্র্যাগ করুন। লাল বিন্দু দিয়ে কোণ পরিবর্তন হবে এবং সব মান রিয়েল-টাইমে আপডেট হবে।'
-  },
-  {
-    target: '#trig-values-panel',
-    emoji: '📊',
-    title: 'ত্রিকোণমিতিক মান',
-    navigate: 'Trigonometry',
-    content: 'cos θ, sin θ এবং tan θ এর মান এখানে দেখা যাবে। মান সরাসরি এডিট করেও কোণ পরিবর্তন করা সম্ভব!'
-  },
-  {
-    target: '#trig-wave-graph',
-    emoji: '〰️',
-    title: 'সাইন ও কোসাইন গ্রাফ',
-    navigate: 'Trigonometry',
-    content: 'সবুজ রেখা সাইন এবং নীল রেখা কোসাইন দেখাচ্ছে। কোণ পরিবর্তন করলে লাল দাগ গ্রাফে সরে যাবে।'
-  },
-  {
-    target: '#trig-settings',
-    emoji: '⚙️',
-    title: 'ভিজ্যুয়াল সেটিংস',
-    navigate: 'Trigonometry',
-    content: 'রেখার ব্লিংকিং চালু/বন্ধ করতে এই টগলগুলো ব্যবহার করুন।'
-  },
-  {
-    target: 'center',
-    emoji: '📈',
-    title: 'বীজগণিত ল্যাব',
-    navigate: 'Quadratics',
-    content: 'এখন দ্বিঘাত সমীকরণ ল্যাবে আসা হয়েছে। এখানে প্যারাবোলার সহগ পরিবর্তন করে গ্রাফ রিয়েল-টাইমে পর্যবেক্ষণ করা যাবে।'
-  },
-  {
-    target: 'center',
-    emoji: '📐',
-    title: 'জ্যামিতি ল্যাব',
-    navigate: 'Geometry',
-    content: 'সবশেষে জ্যামিতি ল্যাব! এখানে অধ্যায় ও উপপাদ্য নির্বাচন করে অ্যানিমেটেড ধাপে ধাপে প্রমাণ দেখা যাবে।'
-  },
-  {
-    target: 'center',
-    emoji: '🎉',
-    title: 'ট্যুর সম্পন্ন!',
-    navigate: 'Home',
-    content: 'আপনি এখন ১০এমএস ম্যাথ ল্যাবের সব ফিচার সম্পর্কে জানেন। যেকোনো ল্যাব বেছে নিন এবং গণিত শেখা শুরু করুন!'
-  }
-];
+
 
 // --- Components ---
 
 export default function App() {
+  const [language, setLanguage] = useState<'BN' | 'EN'>('BN');
+  const tourSteps = React.useMemo(() => [
+    { target: 'center', emoji: '👋', title: tr('tour1Title', language), content: tr('tour1Content', language) },
+    { target: '#tour-feature-cards', emoji: '🗂️', title: tr('tour2Title', language), content: tr('tour2Content', language) },
+    { target: '#tour-quickstart', emoji: '⚡', title: tr('tour3Title', language), content: tr('tour3Content', language) },
+    { target: '#tour-trig-card', emoji: '📐', title: tr('tour4Title', language), content: tr('tour4Content', language) },
+    { target: '#trig-angle-control', emoji: '🎯', title: tr('tour5Title', language), navigate: 'Trigonometry', content: tr('tour5Content', language) },
+    { target: '#trig-canvas-area', emoji: '⭕', title: tr('tour6Title', language), navigate: 'Trigonometry', content: tr('tour6Content', language) },
+    { target: '#trig-values-panel', emoji: '📊', title: tr('tour7Title', language), navigate: 'Trigonometry', content: tr('tour7Content', language) },
+    { target: '#trig-wave-graph', emoji: '〰️', title: tr('tour8Title', language), navigate: 'Trigonometry', content: tr('tour8Content', language) },
+    { target: '#trig-settings', emoji: '⚙️', title: tr('tour9Title', language), navigate: 'Trigonometry', content: tr('tour9Content', language) },
+    { target: 'center', emoji: '📈', title: tr('tour10Title', language), navigate: 'Quadratics', content: tr('tour10Content', language) },
+    { target: 'center', emoji: '📐', title: tr('tour11Title', language), navigate: 'Geometry', content: tr('tour11Content', language) },
+    { target: 'center', emoji: '🎉', title: tr('tour12Title', language), navigate: 'Home', content: tr('tour12Content', language) }
+  ], [language]);
+
   const [activeSim, setActiveSim] = useState<ActiveSim>('Home');
   const [showTour, setShowTour] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [selectedTheorem, setSelectedTheorem] = useState<number | null>(null);
-  const [language, setLanguage] = useState<'BN' | 'EN'>('BN');
 
   // Show welcome modal on first ever visit
   useEffect(() => {
@@ -287,15 +225,188 @@ export default function App() {
 
   if (activeSim === 'Home') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col font-bangla text-ten-ink">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 shadow-sm">
-          <h1 className="text-2xl font-bold text-red-600">10MS Math Laboratory</h1>
-          <div className="flex items-center gap-4">
+      <LanguageContext.Provider value={language}>
+        <div className="min-h-screen bg-gray-50 flex flex-col font-bangla text-ten-ink">
+          <header className="min-h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shrink-0 shadow-sm sticky top-0 z-50">
+            <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
+              <img 
+                src="https://cdn.10minuteschool.com/images/svg/Origin%20Labs%20Black.svg" 
+                alt="10MS Logo" 
+                className="h-6 md:h-8 shrink-0" 
+              />
+              <h1 className="hidden sm:block text-lg md:text-2xl font-bold text-red-600 truncate mr-2 border-l border-gray-200 pl-2 md:pl-3">
+                Math Laboratory
+              </h1>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4 shrink-0">
+              <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+                <button
+                  onClick={() => setLanguage('BN')}
+                  className={cn(
+                    "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
+                    language === 'BN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  BN
+                </button>
+                <button
+                  onClick={() => setLanguage('EN')}
+                  className={cn(
+                    "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
+                    language === 'EN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  EN
+                </button>
+              </div>
+              <button
+                onClick={() => setShowTour(true)}
+                className="px-3 md:px-4 py-1.5 md:py-2 bg-red-50 text-red-600 rounded-xl text-[10px] md:text-xs font-bold flex items-center gap-1.5 md:gap-2 hover:bg-red-600 hover:text-white transition-all border border-red-100 whitespace-nowrap"
+              >
+                <Play className="w-3 h-3 fill-current" /> <span className="hidden sm:inline">{tr('startTutorial', language)}</span><span className="sm:hidden">Tour</span>
+              </button>
+            </div>
+          </header>
+          <main className="flex-1 flex flex-col items-center overflow-y-auto">
+            {/* Hero Banner */}
+            <div className="w-full bg-red-600 p-8 md:p-16 text-white text-center relative overflow-hidden shrink-0">
+              <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mt-32 blur-3xl" />
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-red-400/20 rounded-full -mr-32 -mb-32 blur-3xl" />
+
+              <motion.h2
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-3xl md:text-6xl font-black mb-4 tracking-tight"
+              >
+                {tr('heroTitle', language)}
+              </motion.h2>
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="text-red-100 text-lg md:text-2xl font-medium opacity-90 max-w-2xl mx-auto px-4"
+              >
+                {tr('heroSubtitle', language)}
+              </motion.p>
+            </div>
+
+            <div className="max-w-6xl w-full p-8 md:p-12">
+              <h3 className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mb-8 flex items-center gap-4">
+                {tr('whatCanYouDo', language)}
+                <div className="h-px flex-1 bg-gray-200" />
+              </h3>
+
+              <div id="tour-feature-cards" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <HomeFeatureCard
+                  id="tour-trig-card"
+                  icon={<Target className="w-8 h-8" />}
+                  title={tr('trigCardTitle', language)}
+                  desc={tr('trigCardDesc', language)}
+                  color="blue"
+                  onClick={() => {
+                    setState(prev => ({ ...prev, angle: 0, unit: 'deg' }));
+                    setActiveSim('Trigonometry');
+                  }}
+                />
+                <HomeFeatureCard
+                  id="tour-quad-card"
+                  icon={<Activity className="w-8 h-8" />}
+                  title={tr('quadCardTitle', language)}
+                  desc={tr('quadCardDesc', language)}
+                  color="red"
+                  onClick={() => setActiveSim('Quadratics')}
+                />
+                <HomeFeatureCard
+                  id="tour-geom-card"
+                  icon={<Shapes className="w-8 h-8" />}
+                  title={tr('geomCardTitle', language)}
+                  desc={tr('geomCardDesc', language)}
+                  color="purple"
+                  onClick={() => setActiveSim('Geometry')}
+                />
+              </div>
+
+              {/* Quick Actions / Presets Style */}
+              <div id="tour-quickstart" className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                <h4 className="text-gray-900 font-black text-xl mb-6">{tr('quickStartTitle', language)}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <button onClick={() => { setActiveSim('Trigonometry'); setState(s => ({ ...s, angle: 30 })); }} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group whitespace-normal">
+                    <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">{tr('qs1Title', language)}</span>
+                    <span className="text-xs text-gray-400">{tr('qs1Desc', language)}</span>
+                  </button>
+                  <button onClick={() => setActiveSim('Quadratics')} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group whitespace-normal">
+                    <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">{tr('qs2Title', language)}</span>
+                    <span className="text-xs text-gray-400">{tr('qs2Desc', language)}</span>
+                  </button>
+                  <button onClick={() => { setActiveSim('Geometry'); setSelectedChapter(8); setSelectedTheorem(18); }} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group whitespace-normal">
+                    <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">{tr('qs3Title', language)}</span>
+                    <span className="text-xs text-gray-400">{tr('qs3Desc', language)}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
+          {showWelcome && (
+            <WelcomeModal
+              onStartTour={() => {
+                localStorage.setItem('10ms-welcomed', '1');
+                setShowWelcome(false);
+                setShowTour(true);
+              }}
+              onClose={() => {
+                localStorage.setItem('10ms-welcomed', '1');
+                setShowWelcome(false);
+              }}
+            />
+          )}
+          {showTour && (
+            <GuidedTour
+              steps={tourSteps}
+              onFinish={() => setShowTour(false)}
+              onSkip={() => setShowTour(false)}
+              onNavigate={(sim) => {
+                if (sim === 'Trigonometry') { setState(prev => ({ ...prev, angle: 45 })); setActiveSim('Trigonometry'); }
+                else if (sim === 'Quadratics') setActiveSim('Quadratics');
+                else if (sim === 'Geometry') { setSelectedChapter(null); setSelectedTheorem(null); setActiveSim('Geometry'); }
+                else if (sim === 'Home') setActiveSim('Home');
+              }}
+            />
+          )}
+        </div>
+      </LanguageContext.Provider>
+    );
+  }
+
+  return (
+    <LanguageContext.Provider value={language}>
+      <div className="min-h-screen bg-gray-50 flex flex-col font-bangla text-ten-ink select-none overflow-hidden">
+        {/* Header */}
+        <header className="min-h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 md:px-6 shrink-0 sticky top-0 z-50">
+          <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+            <button
+              onClick={() => setActiveSim('Home')}
+              className="p-1.5 md:p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors shrink-0"
+            >
+              <ChevronLeft width="18" height="18" className="text-gray-600 stroke-[2.5]" />
+            </button>
+            <h1 className="text-base md:text-xl font-bold truncate flex items-center gap-2 md:gap-3">
+              <img 
+                src="https://cdn.10minuteschool.com/images/svg/Origin%20Labs%20Black.svg" 
+                alt="10MS Logo" 
+                className="h-5 md:h-6 shrink-0" 
+              />
+              <span className="hidden md:block border-l border-gray-200 pl-2 md:pl-3">
+                {activeSim === 'Trigonometry' ? tr('simTitleTrig', language) :
+                  activeSim === 'Quadratics' ? tr('simTitleQuad', language) : tr('simTitleGeom', language)}
+              </span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
               <button
                 onClick={() => setLanguage('BN')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                  "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
                   language === 'BN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
                 )}
               >
@@ -304,113 +415,263 @@ export default function App() {
               <button
                 onClick={() => setLanguage('EN')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                  "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
                   language === 'EN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
                 )}
               >
                 EN
               </button>
             </div>
-            <button
-              onClick={() => setShowTour(true)}
-              className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-red-600 hover:text-white transition-all border border-red-100"
-            >
-              <Play className="w-3 h-3 fill-current" /> টিউটোরিয়াল শুরু করি
-            </button>
+            <span className="hidden sm:inline text-sm font-medium text-gray-500">
+              {activeSim === 'Trigonometry' ? tr('chapterTrig', language) :
+                activeSim === 'Quadratics' ? tr('chapterQuad', language) : ''}
+            </span>
+            <div className="hidden lg:block px-2 py-0.5 md:px-3 md:py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">{tr('gradeLabel', language)}</div>
           </div>
         </header>
-        <main className="flex-1 flex flex-col items-center overflow-y-auto">
-          {/* Hero Banner */}
-          <div className="w-full bg-red-600 p-12 md:p-16 text-white text-center relative overflow-hidden shrink-0">
-            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mt-32 blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-red-400/20 rounded-full -mr-32 -mb-32 blur-3xl" />
 
-            <motion.h2
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="text-4xl md:text-6xl font-black mb-4 tracking-tight"
-            >
-              10MS ম্যাথ ল্যাবে স্বাগতম!
-            </motion.h2>
-            <motion.p
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-red-100 text-xl md:text-2xl font-medium opacity-90 max-w-2xl mx-auto"
-            >
-              গণিতের রহস্য উন্মোচন করো — নিজে পরীক্ষা করে শেখো
-            </motion.p>
-          </div>
+        {activeSim === 'Trigonometry' ? (
+          <main className="flex-1 p-2 md:p-5 grid grid-cols-12 gap-3 md:gap-4 max-w-7xl mx-auto w-full auto-rows-min lg:auto-rows-fr overflow-y-auto">
+            {/* Top Bento Row: Angle Control */}
+            <div id="trig-angle-control" className="col-span-12 bento-card flex flex-col sm:flex-row items-center px-4 md:px-6 py-3 md:py-4 justify-between bg-white gap-4">
+              <div className="flex items-center gap-4 md:gap-8 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">{tr('setAngleLabel', language)}</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={angleInputRef}
+                      type="text"
+                      value={angleInput}
+                      onChange={(e) => {
+                        setAngleInput(e.target.value);
+                        const val = parseMath(e.target.value);
+                        if (val !== null) {
+                          if (state.unit === 'deg') updateAngle(val);
+                          else updateAngle((val * 180) / Math.PI);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      className="text-lg md:text-2xl font-bold w-20 md:w-32 border-none px-2 py-1 focus:ring-0 mono bg-gray-50 rounded-lg shadow-inner text-gray-700"
+                      placeholder={tr('anglePlaceholder', language)}
+                    />
+                    <span className="text-lg md:text-2xl font-bold -ml-2">{state.unit === 'deg' ? '°' : ''}</span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="max-w-6xl w-full p-8 md:p-12">
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mb-8 flex items-center gap-4">
-              কি কি করা যাবে?
-              <div className="h-px flex-1 bg-gray-200" />
-            </h3>
-
-            <div id="tour-feature-cards" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <HomeFeatureCard
-                id="tour-trig-card"
-                icon={<Target className="w-8 h-8" />}
-                title="ত্রিকোণমিতি এক্সপ্লোরেশন"
-                desc="ইউনিট সার্কেল এবং সাইন-কোসাইন গ্রাফ সরাসরি পরিবর্তন করে শিখুন। রেডিয়ান ও ডিগ্রির সম্পর্ক জানুন।"
-                color="blue"
-                onClick={() => {
-                  setState(prev => ({ ...prev, angle: 0, unit: 'deg' }));
-                  setActiveSim('Trigonometry');
-                }}
-              />
-              <HomeFeatureCard
-                id="tour-quad-card"
-                icon={<Activity className="w-8 h-8" />}
-                title="দ্বিঘাত সমীকরণ ল্যাব"
-                desc="প্যারাবোলা এবং এর সহগগুলোর প্রভাব রিয়েল-টাইমে পর্যবেক্ষণ করুন। শীর্ষবিন্দু ও মূল নির্ণয় করুন।"
-                color="red"
-                onClick={() => setActiveSim('Quadratics')}
-              />
-              <HomeFeatureCard
-                id="tour-geom-card"
-                icon={<Shapes className="w-8 h-8" />}
-                title="জ্যামিতি ল্যাব (বৃত্ত)"
-                desc="বৃত্তের গুরুত্বপূর্ণ উপপাদ্যগুলো অ্যানিমেশনের মাধ্যমে ধাপে ধাপে শিখুন। ভিজ্যুয়াল প্রমাণ দেখুন।"
-                color="purple"
-                onClick={() => setActiveSim('Geometry')}
-              />
-            </div>
-
-            {/* Quick Actions / Presets Style */}
-            <div id="tour-quickstart" className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-              <h4 className="text-gray-900 font-black text-xl mb-6">দ্রুত শুরু করুন (Quick Start)</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <button onClick={() => { setActiveSim('Trigonometry'); setState(s => ({ ...s, angle: 30 })); }} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group">
-                  <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">ত্রিকোণমিতি: ৩০° কোণ</span>
-                  <span className="text-xs text-gray-400">সরাসরি ৩০ ডিগ্রি মান দেখুন</span>
-                </button>
-                <button onClick={() => setActiveSim('Quadratics')} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group">
-                  <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">বীজগণিত: দ্বিঘাত সমীকরণ</span>
-                  <span className="text-xs text-gray-400">গ্রাফিং শুরু করুন</span>
-                </button>
-                <button onClick={() => { setActiveSim('Geometry'); setSelectedChapter(8); setSelectedTheorem(18); }} className="p-4 border border-gray-100 rounded-2xl hover:border-red-200 hover:bg-red-50/30 transition-all text-left group">
-                  <span className="block font-bold text-gray-800 group-hover:text-red-600 transition-colors">জ্যামিতি: বৃত্তের উপপাদ্য ১৮</span>
-                  <span className="text-xs text-gray-400">অ্যানিমেশন দেখুন</span>
-                </button>
+              <div className="hidden sm:flex items-center gap-4 text-sm font-medium text-gray-600">
+                <span>{tr('dragPoint', language)}</span>
+                <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                </div>
               </div>
             </div>
-          </div>
-        </main>
-        {showWelcome && (
-          <WelcomeModal
-            onStartTour={() => {
-              localStorage.setItem('10ms-welcomed', '1');
-              setShowWelcome(false);
-              setShowTour(true);
-            }}
-            onClose={() => {
-              localStorage.setItem('10ms-welcomed', '1');
-              setShowWelcome(false);
-            }}
-          />
+
+            {/* Left Grid: Simulation Canvas */}
+            <div id="trig-canvas-area" className="col-span-12 lg:col-span-7 lg:row-span-5 flex flex-col gap-4">
+              <div className="bento-card relative overflow-hidden flex items-center justify-center bg-white aspect-square lg:aspect-auto flex-1 min-h-[300px] md:min-h-[400px]">
+                <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
+                  <span className={cn(
+                    "text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-tighter shadow-sm border-2",
+                    quadrant === 1 ? "bg-gray-50 text-gray-800 border-gray-200" :
+                      quadrant === 2 ? "bg-gray-50 text-gray-800 border-gray-200" :
+                        quadrant === 3 ? "bg-gray-50 text-gray-800 border-gray-200" :
+                          "bg-gray-50 text-gray-800 border-gray-200"
+                  )}>
+                    QUADRANT
+                  </span>
+                </div>
+
+                <UnitCircleCanvas state={state} onAngleChange={updateAngle} />
+              </div>
+            </div>
+
+            {/* Right Grid: Stats & Controls */}
+            <div className="col-span-12 lg:col-span-5 lg:row-span-5 flex flex-col gap-4 overflow-y-auto">
+
+              {/* Coordinates Bento Box */}
+              <section id="trig-values-panel" className="bento-card p-5 flex flex-col justify-start">
+                <span className="text-xs font-bold text-red-600 uppercase tracking-widest pb-1">{tr('allValuesTitle', language)}</span>
+
+                <div className="mt-6 space-y-4">
+                  {/* Detailed Summary Info - Always Visible */}
+                  <div className="grid grid-cols-2 gap-4 pb-6 border-b border-gray-100">
+                    <div className="bg-red-50 p-3 rounded-xl border border-red-100">
+                      <span className="text-[10px] text-red-600 font-bold uppercase block mb-1">{tr('radianValue', language)}</span>
+                      <span className="text-xl font-bold text-red-700 font-mono">
+                        {specialLabels ? <MathText math={specialLabels.rad} /> : (rad).toFixed(2) + ' rad'}
+                      </span>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded-xl border border-red-100">
+                      <span className="text-[10px] text-red-600 font-bold uppercase block mb-1">{tr('coordinateLabel', language)}</span>
+                      <span className="text-xl font-bold text-red-700 font-mono">
+                        ({specialLabels ? <MathText math={specialLabels.cos} /> : cosVal.toFixed(3)}, {specialLabels ? <MathText math={specialLabels.sin} /> : sinVal.toFixed(3)})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 pt-2">
+                    <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
+                      <div className="flex flex-col">
+                        <span className="text-lg font-bold text-info">cos θ <span className="text-xs opacity-60 font-normal ml-1">({tr('cosDesc', language)})</span></span>
+                        <span className="text-[10px] text-info opacity-50 font-bold tracking-tighter">X = Cos(θ)</span>
+                      </div>
+                      <div className="text-right flex flex-col items-end justify-center">
+                        <input
+                          type="text"
+                          value={cosInput}
+                          onChange={(e) => {
+                            setCosInput(e.target.value);
+                            const val = parseMath(e.target.value);
+                            if (val !== null && val >= -1.01 && val <= 1.01) {
+                              const currentAngle = (state.angle % 360 + 360) % 360;
+                              let newAngle = (Math.acos(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
+                              if (currentAngle > 180) newAngle = 360 - newAngle;
+                              updateAngle(newAngle);
+                              setCosInput(e.target.value);
+                            }
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          className="text-2xl font-bold mono text-info w-32 text-right border-b-2 border-transparent focus:border-info bg-transparent outline-none p-0"
+                          placeholder="cos θ"
+                        />
+                        <div className="h-4">
+                          {specialLabels?.cos && <div className="text-[10px] text-info font-bold uppercase"><MathText math={specialLabels.cos} /></div>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
+                      <div className="flex flex-col">
+                        <span className="text-lg font-bold text-success">sin θ <span className="text-xs opacity-60 font-normal ml-1">({tr('sinDesc', language)})</span></span>
+                        <span className="text-[10px] text-success opacity-50 font-bold tracking-tighter">Y = Sin(θ)</span>
+                      </div>
+                      <div className="text-right flex flex-col items-end justify-center">
+                        <input
+                          type="text"
+                          value={sinInput}
+                          onChange={(e) => {
+                            setSinInput(e.target.value);
+                            const val = parseMath(e.target.value);
+                            if (val !== null && val >= -1.01 && val <= 1.01) {
+                              const currentAngle = (state.angle % 360 + 360) % 360;
+                              let newAngle = (Math.asin(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
+                              const isInLeftHemisphere = currentAngle > 90 && currentAngle < 270;
+                              if (isInLeftHemisphere) newAngle = 180 - newAngle;
+                              if (newAngle < 0) newAngle += 360;
+                              updateAngle(newAngle);
+                              setSinInput(e.target.value);
+                            }
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          className="text-2xl font-bold mono text-success w-32 text-right border-b-2 border-transparent focus:border-success bg-transparent outline-none p-0"
+                          placeholder="sin θ"
+                        />
+                        <div className="h-4">
+                          {specialLabels?.sin && <div className="text-[10px] text-success font-bold uppercase"><MathText math={specialLabels.sin} /></div>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between min-h-[68px]">
+                      <div className="flex flex-col">
+                        <span className="text-lg font-bold text-warn">tan θ <span className="text-xs opacity-60 font-normal ml-1">({tr('tanDesc', language)})</span></span>
+                        <span className="text-xs text-warn font-bold tracking-tighter">
+                          <MathText math="m = \frac{\sin(\theta)}{\cos(\theta)}" />
+                        </span>
+                      </div>
+                      <div className="text-right flex flex-col items-end justify-center">
+                        <input
+                          type="text"
+                          value={tanInput}
+                          onChange={(e) => {
+                            setTanInput(e.target.value);
+                            const val = parseMath(e.target.value);
+                            if (val !== null) {
+                              const currentAngle = (state.angle % 360 + 360) % 360;
+                              let newAngle = (Math.atan(val) * 180) / Math.PI;
+                              const isLeft = currentAngle > 90 && currentAngle < 270;
+                              if (isLeft) newAngle += 180;
+                              if (newAngle < 0) newAngle += 360;
+                              updateAngle(newAngle);
+                              setTanInput(e.target.value);
+                            }
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          className={cn(
+                            "font-bold mono text-warn text-right border-b-2 border-transparent focus:border-warn bg-transparent outline-none p-0",
+                            tanInput.length > 8 ? "text-xl w-60" : "text-2xl w-32"
+                          )}
+                          placeholder="tan θ"
+                        />
+                        <div className="h-4" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+
+              {/* Settings / Toggles */}
+              <section id="trig-settings" className="bento-card p-5 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tr('settingsTitle', language)}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <SmallToggle
+                    label={tr('blinkLines', language)}
+                    active={state.isBlinkingLines}
+                    onClick={() => setState(prev => ({ ...prev, isBlinkingLines: !prev.isBlinkingLines }))}
+                  />
+                  <SmallToggle
+                    label={tr('blinkArc', language)}
+                    active={state.isBlinkingArc}
+                    onClick={() => setState(prev => ({ ...prev, isBlinkingArc: !prev.isBlinkingArc }))}
+                  />
+                </div>
+              </section>
+
+              {/* Wave Graph Section */}
+              <section id="trig-wave-graph" className="bento-card p-5 flex flex-col gap-3 bg-white">
+                <span className="text-[10px] font-bold text-gray-400 tracking-widest">{tr('waveTitle', language)}</span>
+                <div className="h-40 w-full">
+                  <WaveGraph angle={state.angle} />
+                </div>
+                <div className="flex justify-between items-center px-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-1 bg-[#1CAB55] rounded-full" />
+                    <span className="text-[10px] font-bold text-gray-500">{tr('sinWave', language)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-1 bg-[#274FE3] rounded-full" />
+                    <span className="text-[10px] font-bold text-gray-500">{tr('cosWave', language)}</span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </main>
+        ) : activeSim === 'Quadratics' ? (
+          <QuadraticSim />
+        ) : (
+          <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+            <GeometrySim
+              selectedChapter={selectedChapter}
+              setSelectedChapter={setSelectedChapter}
+              selectedTheorem={selectedTheorem}
+              setSelectedTheorem={setSelectedTheorem}
+            />
+          </main>
         )}
+
+        {/* ── Feedback CTA — shown on all sim pages ── */}
+        {activeSim === 'Trigonometry' && <FeedbackButton simulationName="10ms-trig" />}
+        {activeSim === 'Quadratics' && <FeedbackButton simulationName="10ms-quadratics" />}
+        {activeSim === 'Geometry' && <FeedbackButton simulationName="10ms-geometry" />}
+
+        {/* Footer */}
+        <footer className="py-4 text-center text-[10px] text-gray-400 font-sans border-t bg-white uppercase tracking-widest shrink-0">
+          {tr('footer', language)}
+        </footer>
+
         {showTour && (
           <GuidedTour
             steps={tourSteps}
@@ -425,308 +686,7 @@ export default function App() {
           />
         )}
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-bangla text-ten-ink select-none overflow-hidden">
-      {/* Header */}
-      <header className="min-h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 md:px-6 shrink-0 sticky top-0 z-50">
-        <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
-          <button
-            onClick={() => setActiveSim('Home')}
-            className="p-1.5 md:p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors shrink-0"
-          >
-            <ChevronLeft width="18" height="18" className="text-gray-600 stroke-[2.5]" />
-          </button>
-          <h1 className="text-sm md:text-xl font-bold truncate">
-            {activeSim === 'Trigonometry' ? 'ইউনিট সার্কেল সিমুলেশন' :
-              activeSim === 'Quadratics' ? 'দ্বিঘাত সমীকরণ ল্যাব' : 'জ্যামিতি ল্যাব'}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
-            <button
-              onClick={() => setLanguage('BN')}
-              className={cn(
-                "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
-                language === 'BN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              BN
-            </button>
-            <button
-              onClick={() => setLanguage('EN')}
-              className={cn(
-                "px-2 md:px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold transition-all",
-                language === 'EN' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              EN
-            </button>
-          </div>
-          <span className="hidden sm:inline text-sm font-medium text-gray-500">
-            {activeSim === 'Trigonometry' ? 'অধ্যায় ৮: ত্রিকোণমিতি' :
-              activeSim === 'Quadratics' ? 'অধ্যায় ৫: সমীকরণ' : ''}
-          </span>
-          <div className="px-2 py-0.5 md:px-3 md:py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">নবম-দশম শ্রেণি: গণিত</div>
-        </div>
-      </header>
-
-      {activeSim === 'Trigonometry' ? (
-        <main className="flex-1 p-2 md:p-5 grid grid-cols-12 gap-3 md:gap-4 max-w-7xl mx-auto w-full auto-rows-min lg:auto-rows-fr overflow-y-auto">
-          {/* Top Bento Row: Angle Control */}
-          <div id="trig-angle-control" className="col-span-12 bento-card flex flex-col sm:flex-row items-center px-4 md:px-6 py-3 md:py-4 justify-between bg-white gap-4">
-            <div className="flex items-center gap-4 md:gap-8 w-full sm:w-auto justify-between sm:justify-start">
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">কোণের মান নির্ণয় করি</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={angleInputRef}
-                    type="text"
-                    value={angleInput}
-                    onChange={(e) => {
-                      setAngleInput(e.target.value);
-                      const val = parseMath(e.target.value);
-                      if (val !== null) {
-                        if (state.unit === 'deg') updateAngle(val);
-                        else updateAngle((val * 180) / Math.PI);
-                      }
-                    }}
-                    onFocus={(e) => e.target.select()}
-                    className="text-xl md:text-2xl font-bold w-24 md:w-32 border-none px-2 py-1 focus:ring-0 mono bg-gray-50 rounded-lg shadow-inner text-gray-700"
-                    placeholder="মান লিখুন"
-                  />
-                  <span className="text-xl md:text-2xl font-bold -ml-2">{state.unit === 'deg' ? '°' : ''}</span>
-                  <span className="text-gray-400 font-mono text-xs md:text-sm ml-2">
-                    ≈ {state.unit === 'deg' ? (rad).toFixed(2) + ' ব্যাসার্ধ' : Math.round(state.angle) + '°'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-4 text-sm font-medium text-gray-600">
-              <span>বিন্দুটি টেনে কোণ পরিবর্তন করো</span>
-              <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-gray-600"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Left Grid: Simulation Canvas */}
-          <div id="trig-canvas-area" className="col-span-12 lg:col-span-7 lg:row-span-5 flex flex-col gap-4">
-            <div className="bento-card relative overflow-hidden flex items-center justify-center bg-white aspect-square lg:aspect-auto flex-1 min-h-[400px]">
-              <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
-                <span className={cn(
-                  "text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-tighter shadow-sm border-2",
-                  quadrant === 1 ? "bg-gray-50 text-gray-800 border-gray-200" :
-                    quadrant === 2 ? "bg-gray-50 text-gray-800 border-gray-200" :
-                      quadrant === 3 ? "bg-gray-50 text-gray-800 border-gray-200" :
-                        "bg-gray-50 text-gray-800 border-gray-200"
-                )}>
-                  QUADRANT
-                </span>
-              </div>
-
-              <UnitCircleCanvas state={state} onAngleChange={updateAngle} />
-            </div>
-          </div>
-
-          {/* Right Grid: Stats & Controls */}
-          <div className="col-span-12 lg:col-span-5 lg:row-span-5 flex flex-col gap-4 overflow-y-auto">
-
-            {/* Coordinates Bento Box */}
-            <section id="trig-values-panel" className="bento-card p-5 flex flex-col justify-start">
-              <span className="text-xs font-bold text-red-600 uppercase tracking-widest pb-1">কোণের মান অনুযায়ী সকল তথ্য</span>
-
-              <div className="mt-6 space-y-4">
-                {/* Detailed Summary Info - Always Visible */}
-                <div className="grid grid-cols-2 gap-4 pb-6 border-b border-gray-100">
-                  <div className="bg-red-50 p-3 rounded-xl border border-red-100">
-                    <span className="text-[10px] text-red-600 font-bold uppercase block mb-1">রেডিয়ান মান</span>
-                    <span className="text-xl font-bold text-red-700 font-mono">
-                      {specialLabels ? <MathText math={specialLabels.rad} /> : (rad).toFixed(2) + ' rad'}
-                    </span>
-                  </div>
-                  <div className="bg-red-50 p-3 rounded-xl border border-red-100">
-                    <span className="text-[10px] text-red-600 font-bold uppercase block mb-1">স্থানাঙ্ক বিন্দু</span>
-                    <span className="text-xl font-bold text-red-700 font-mono">
-                      ({specialLabels ? <MathText math={specialLabels.cos} /> : cosVal.toFixed(3)}, {specialLabels ? <MathText math={specialLabels.sin} /> : sinVal.toFixed(3)})
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-6 pt-2">
-                  <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
-                    <div className="flex flex-col">
-                      <span className="text-lg font-bold text-info">cos θ <span className="text-xs opacity-60 font-normal ml-1">(ভূজ)</span></span>
-                      <span className="text-[10px] text-info opacity-50 font-bold tracking-tighter">X = Cos(θ)</span>
-                    </div>
-                    <div className="text-right flex flex-col items-end justify-center">
-                      <input
-                        type="text"
-                        value={cosInput}
-                        onChange={(e) => {
-                          setCosInput(e.target.value);
-                          const val = parseMath(e.target.value);
-                          if (val !== null && val >= -1.01 && val <= 1.01) {
-                            const currentAngle = (state.angle % 360 + 360) % 360;
-                            let newAngle = (Math.acos(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
-                            if (currentAngle > 180) newAngle = 360 - newAngle;
-                            updateAngle(newAngle);
-                            setCosInput(e.target.value);
-                          }
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        className="text-2xl font-bold mono text-info w-32 text-right border-b-2 border-transparent focus:border-info bg-transparent outline-none p-0"
-                        placeholder="cos θ"
-                      />
-                      <div className="h-4">
-                        {specialLabels?.cos && <div className="text-[10px] text-info font-bold uppercase"><MathText math={specialLabels.cos} /></div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between min-h-[68px] border-b border-gray-50">
-                    <div className="flex flex-col">
-                      <span className="text-lg font-bold text-success">sin θ <span className="text-xs opacity-60 font-normal ml-1">(কোটি)</span></span>
-                      <span className="text-[10px] text-success opacity-50 font-bold tracking-tighter">Y = Sin(θ)</span>
-                    </div>
-                    <div className="text-right flex flex-col items-end justify-center">
-                      <input
-                        type="text"
-                        value={sinInput}
-                        onChange={(e) => {
-                          setSinInput(e.target.value);
-                          const val = parseMath(e.target.value);
-                          if (val !== null && val >= -1.01 && val <= 1.01) {
-                            const currentAngle = (state.angle % 360 + 360) % 360;
-                            let newAngle = (Math.asin(Math.max(-1, Math.min(1, val))) * 180) / Math.PI;
-                            const isInLeftHemisphere = currentAngle > 90 && currentAngle < 270;
-                            if (isInLeftHemisphere) newAngle = 180 - newAngle;
-                            if (newAngle < 0) newAngle += 360;
-                            updateAngle(newAngle);
-                            setSinInput(e.target.value);
-                          }
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        className="text-2xl font-bold mono text-success w-32 text-right border-b-2 border-transparent focus:border-success bg-transparent outline-none p-0"
-                        placeholder="sin θ"
-                      />
-                      <div className="h-4">
-                        {specialLabels?.sin && <div className="text-[10px] text-success font-bold uppercase"><MathText math={specialLabels.sin} /></div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between min-h-[68px]">
-                    <div className="flex flex-col">
-                      <span className="text-lg font-bold text-warn">tan θ <span className="text-xs opacity-60 font-normal ml-1">(ঢাল)</span></span>
-                      <span className="text-xs text-warn font-bold tracking-tighter">
-                        <MathText math="m = \frac{\sin(\theta)}{\cos(\theta)}" />
-                      </span>
-                    </div>
-                    <div className="text-right flex flex-col items-end justify-center">
-                      <input
-                        type="text"
-                        value={tanInput}
-                        onChange={(e) => {
-                          setTanInput(e.target.value);
-                          const val = parseMath(e.target.value);
-                          if (val !== null) {
-                            const currentAngle = (state.angle % 360 + 360) % 360;
-                            let newAngle = (Math.atan(val) * 180) / Math.PI;
-                            const isLeft = currentAngle > 90 && currentAngle < 270;
-                            if (isLeft) newAngle += 180;
-                            if (newAngle < 0) newAngle += 360;
-                            updateAngle(newAngle);
-                            setTanInput(e.target.value);
-                          }
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        className={cn(
-                          "font-bold mono text-warn text-right border-b-2 border-transparent focus:border-warn bg-transparent outline-none p-0",
-                          tanInput.length > 8 ? "text-xl w-60" : "text-2xl w-32"
-                        )}
-                        placeholder="tan θ"
-                      />
-                      <div className="h-4" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-
-            {/* Settings / Toggles */}
-            <section id="trig-settings" className="bento-card p-5 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">সেটিংস</span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <SmallToggle
-                  label="X এবং Y রেখা ব্লিঙ্কিং"
-                  active={state.isBlinkingLines}
-                  onClick={() => setState(prev => ({ ...prev, isBlinkingLines: !prev.isBlinkingLines }))}
-                />
-                <SmallToggle
-                  label="রেডিয়ান রেখা ব্লিঙ্কিং"
-                  active={state.isBlinkingArc}
-                  onClick={() => setState(prev => ({ ...prev, isBlinkingArc: !prev.isBlinkingArc }))}
-                />
-              </div>
-            </section>
-
-            {/* Wave Graph Section */}
-            <section id="trig-wave-graph" className="bento-card p-5 flex flex-col gap-3 bg-white">
-              <span className="text-[10px] font-bold text-gray-400 tracking-widest">Sin(সাইন) ও Cos(কোসাইন) এর গ্রাফ</span>
-              <div className="h-40 w-full">
-                <WaveGraph angle={state.angle} />
-              </div>
-              <div className="flex justify-between items-center px-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-1 bg-[#1CAB55] rounded-full" />
-                  <span className="text-[10px] font-bold text-gray-500">Sin(সাইন)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-1 bg-[#274FE3] rounded-full" />
-                  <span className="text-[10px] font-bold text-gray-500">Cos(কোসাইন)</span>
-                </div>
-              </div>
-            </section>
-          </div>
-        </main>
-      ) : activeSim === 'Quadratics' ? (
-        <QuadraticSim />
-      ) : (
-        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
-          <GeometrySim
-            selectedChapter={selectedChapter}
-            setSelectedChapter={setSelectedChapter}
-            selectedTheorem={selectedTheorem}
-            setSelectedTheorem={setSelectedTheorem}
-          />
-        </main>
-      )}
-
-      {/* Footer */}
-      <footer className="py-4 text-center text-[10px] text-gray-400 font-sans border-t bg-white uppercase tracking-widest shrink-0">
-        © 2026 10 Minute School | Science Division | SSC Prep
-      </footer>
-
-      {showTour && (
-        <GuidedTour
-          steps={tourSteps}
-          onFinish={() => setShowTour(false)}
-          onSkip={() => setShowTour(false)}
-          onNavigate={(sim) => {
-            if (sim === 'Trigonometry') { setState(prev => ({ ...prev, angle: 45 })); setActiveSim('Trigonometry'); }
-            else if (sim === 'Quadratics') setActiveSim('Quadratics');
-            else if (sim === 'Geometry') { setSelectedChapter(null); setSelectedTheorem(null); setActiveSim('Geometry'); }
-            else if (sim === 'Home') setActiveSim('Home');
-          }}
-        />
-      )}
-    </div>
+    </LanguageContext.Provider>
   );
 }
 
@@ -758,7 +718,7 @@ function HomeFeatureCard({ id, icon, title, desc, color, onClick }: any) {
 
 // --- Subcomponents ---
 
-function SimChoiceCard({ id, title, desc, icon, subject = "উচ্চতর গণিত", onClick }: any) {
+function SimChoiceCard({ id, title, desc, icon, subject = tr('highMath', language), onClick }: any) {
   return (
     <motion.button
       id={id}
@@ -767,7 +727,7 @@ function SimChoiceCard({ id, title, desc, icon, subject = "উচ্চতর �
       onClick={onClick}
       className="bg-white p-8 rounded-2xl border-2 border-gray-100 hover:border-red-500 transition-all text-left shadow-lg flex flex-col gap-4 group relative"
     >
-      <div className="absolute top-4 right-4 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-[9px] md:text-[10px] font-bold border border-gray-200">নবম-দশম শ্রেণি: {subject}</div>
+      <div className="absolute top-4 right-4 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-[9px] md:text-[10px] font-bold border border-gray-200">{tr('gradeLabel', language).split(':')[0]}: {subject}</div>
       <div className="p-4 bg-gray-50 rounded-xl group-hover:bg-red-50 transition-colors w-fit">
         {icon}
       </div>
@@ -776,7 +736,7 @@ function SimChoiceCard({ id, title, desc, icon, subject = "উচ্চতর �
         <p className="text-gray-500 font-sans leading-relaxed">{desc}</p>
       </div>
       <div className="mt-4 flex items-center gap-2 text-ten-red font-bold font-sans">
-        সিমুলেশন শুরু করুন <ChevronRight className="w-4 h-4" />
+        {tr('startSim', language)} <ChevronRight className="w-4 h-4" />
       </div>
     </motion.button>
   );
@@ -790,7 +750,7 @@ function SignPill({ label, isPositive }: { label: string, isPositive: boolean })
         "px-2 py-1 rounded-md text-[11px] font-bold transition-all",
         isPositive ? "sign-pill-pos" : "sign-pill-neg"
       )}>
-        {isPositive ? '+ ধনাত্মক' : '− ঋণাত্মক'}
+        {isPositive ? `+ ${tr('positive', language)}` : `− ${tr('negative', language)}`}
       </div>
     </div>
   );

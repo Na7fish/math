@@ -19,6 +19,8 @@ import {
   Move
 } from 'lucide-react';
 import { cn } from './lib/utils';
+import { useLang } from './lib/LanguageContext';
+import { tr } from './lib/translations';
 import MathText from './components/MathText';
 
 // --- Types ---
@@ -43,6 +45,7 @@ interface QuadState {
 // --- Component ---
 
 export default function QuadraticSim() {
+  const language = useLang();
   const [activeMenu, setActiveMenu] = useState<boolean>(true);
   const [state, setState] = useState<QuadState>({
     mode: 'Explore',
@@ -113,29 +116,29 @@ export default function QuadraticSim() {
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-7xl font-bold mb-16 text-center tracking-tight text-gray-900"
+          className="text-3xl md:text-7xl font-bold mb-8 md:mb-16 text-center tracking-tight text-gray-900 px-4"
         >
-          দ্বিঘাত সমীকরণ গ্রাফিং
+          {tr('quadPageTitle', language)}
         </motion.h1>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl w-full">
           <MenuCard 
-            title="অন্বেষণ (Explore)" 
+            title={tr('quadModeExplore', language)} 
             icon={<ParabolaIcon type="explore" />}
             onClick={() => resetToMode('Explore')}
           />
           <MenuCard 
-            title="সাধারণ আকার (Standard Form)" 
+            title={tr('quadModeStandard', language)} 
             icon={<ParabolaIcon type="standard" />}
             onClick={() => resetToMode('Standard')}
           />
           <MenuCard 
-            title="শীর্ষবিন্দু আকার (Vertex Form)" 
+            title={tr('quadModeVertex', language)} 
             icon={<ParabolaIcon type="vertex" />}
             onClick={() => resetToMode('Vertex')}
           />
           <MenuCard 
-            title="উপকেন্দ্র ও নিয়ামক (Focus & Directrix)" 
+            title={tr('quadModeFocus', language)} 
             icon={<ParabolaIcon type="focus" />}
             onClick={() => resetToMode('Focus')}
           />
@@ -147,7 +150,7 @@ export default function QuadraticSim() {
   return (
     <div className="flex-1 flex flex-col md:flex-row bg-gray-50 font-sans overflow-hidden">
       {/* Simulation Area */}
-      <div className="flex-1 relative p-2 md:p-4 flex items-center justify-center bg-gray-50 overflow-hidden">
+      <div className="flex-1 relative p-2 md:p-4 flex items-center justify-center bg-gray-50 overflow-hidden min-h-[350px] md:min-h-0">
         <div className="w-full aspect-square max-w-[800px] bg-white rounded-lg shadow-xl border border-gray-200 relative overflow-hidden">
           <QuadraticCanvas 
             state={state} 
@@ -175,7 +178,7 @@ export default function QuadraticSim() {
         {/* Equation Editor */}
         <section className="bg-[#f2f2f2] border border-gray-300 rounded-xl p-4 md:p-5 shadow-sm">
           <div className="flex items-center justify-center gap-3 mb-4">
-             <h3 className="text-xl italic font-serif tracking-wide text-gray-700">
+             <h3 className="text-lg md:text-xl italic font-serif tracking-wide text-gray-700 text-center">
                <MathText math={
                  state.mode === 'Focus' 
                    ? 'y = \\frac{1}{4p}(x - h)^2 + k' 
@@ -185,7 +188,7 @@ export default function QuadraticSim() {
           </div>
 
           <div className="flex flex-col gap-4">
-             <div className="flex flex-wrap items-center justify-center gap-2 text-2xl font-serif py-2 w-full">
+             <div className="flex flex-wrap items-center justify-center gap-2 text-xl md:text-2xl font-serif py-2 w-full">
                <span className="italic">y =</span>
                {state.mode === 'Focus' ? (
                  <div className="flex flex-col items-center">
@@ -249,7 +252,7 @@ export default function QuadraticSim() {
                    title="Take Snapshot"
                  >
                    <Camera className="w-3.5 h-3.5" fill={state.snapshot ? "currentColor" : "none"} />
-                    অন্যান্য মানের সাথে তুলনা করি
+                    {tr('quadCompare', language)}
                  </button>
                  <button 
                    onClick={() => {
@@ -264,7 +267,7 @@ export default function QuadraticSim() {
                    title="Clear Snapshot"
                  >
                     <Eraser className="w-3.5 h-3.5" />
-                     মুছে ফেলি
+                     {tr('quadClear', language)}
                  </button>
               </div>
           </div>
@@ -273,37 +276,37 @@ export default function QuadraticSim() {
         {/* Toggles */}
         <section className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm flex flex-col gap-4">
            <ToggleRow 
-             label="শীর্ষবিন্দু (Vertex)" 
+             label={tr('quadVertex', language)} 
              icon={<div className="w-4 h-4 rounded-full bg-red-600" />} 
              active={state.showVertex} 
              onClick={() => setState(s => ({ ...s, showVertex: !s.showVertex }))} 
            />
            <ToggleRow 
-             label="প্রতিসাম্য অক্ষ (Axis of Symmetry)" 
+             label={tr('quadAoS', language)} 
              icon={<div className="w-1 h-4" style={{backgroundImage: 'linear-gradient(to bottom, #dc2626 50%, #000000 50%)', backgroundSize: '100% 8px'}} />} 
              active={state.showAoS} 
              onClick={() => setState(s => ({ ...s, showAoS: !s.showAoS }))} 
            />
            <ToggleRow 
-             label="সমীকরণ (Equations)" 
+             label={tr('quadEquations', language)} 
              active={state.showEquations} 
              onClick={() => setState(s => ({ ...s, showEquations: !s.showEquations }))} 
            />
            <ToggleRow 
-             label="স্থানাঙ্ক (Coordinates)" 
+             label={tr('quadCoords', language)} 
              active={state.showCoordinates} 
              onClick={() => setState(s => ({ ...s, showCoordinates: !s.showCoordinates }))} 
            />
            {state.mode === 'Focus' && (
              <>
                <ToggleRow 
-                 label="উপকেন্দ্র (Focus)" 
+                 label={tr('quadFocus', language)} 
                  icon={<div className="w-3 h-3 rounded-full bg-black" />} 
                  active={state.showFocus} 
                  onClick={() => setState(s => ({ ...s, showFocus: !s.showFocus }))} 
                />
                <ToggleRow 
-                 label="নিয়ামক (Directrix)" 
+                 label={tr('quadDirectrix', language)} 
                  icon={<div className="w-4 h-0.5 bg-red-600" />} 
                  active={state.showDirectrix} 
                  onClick={() => setState(s => ({ ...s, showDirectrix: !s.showDirectrix }))} 
@@ -314,10 +317,10 @@ export default function QuadraticSim() {
         
         {/* Information Panel (Equation Details) */}
         <section className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm flex flex-col gap-4">
-           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">তথ্য (Information)</h3>
+           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">{tr('quadInfoTitle', language)}</h3>
            <div className="flex flex-col gap-3">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500 font-medium">শীর্ষবিন্দু (Vertex):</span>
+                <span className="text-gray-500 font-medium">{tr('quadVertexLbl', language)}</span>
                 <span className="font-bold text-red-600">
                   <MathText math={`(${Math.abs(state.h) > 1000 ? state.h.toExponential(1) : parseFloat(state.h.toFixed(2))}, ${Math.abs(state.k) > 1000 ? state.k.toExponential(1) : parseFloat(state.k.toFixed(2))})`} />
                 </span>
@@ -325,13 +328,13 @@ export default function QuadraticSim() {
               {state.mode === 'Focus' && (
                 <>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 font-medium">উপকেন্দ্র (Focus):</span>
+                    <span className="text-gray-500 font-medium">{tr('quadFocusLbl', language)}</span>
                     <span className="font-bold text-black">
                       <MathText math={`(${parseFloat(state.h.toFixed(2))}, ${parseFloat((state.k + 1/(4*(state.a || 0.1))).toFixed(2))})`} />
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 font-medium">নিয়ামক (Directrix):</span>
+                    <span className="text-gray-500 font-medium">{tr('quadDirectrixLbl', language)}</span>
                     <span className="font-bold text-red-600">
                       <MathText math={`y = ${parseFloat((state.k - 1/(4*(state.a || 0.1))).toFixed(2))}`} />
                     </span>
@@ -339,16 +342,16 @@ export default function QuadraticSim() {
                 </>
               )}
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500 font-medium">Y-ছেদক (Y-Intercept):</span>
+                <span className="text-gray-500 font-medium">{tr('quadYIntercept', language)}</span>
                 <span className="font-bold"><MathText math={`c = ${parseFloat(state.c.toFixed(2))}`} /></span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500 font-medium">মূল (Roots):</span>
+                <span className="text-gray-500 font-medium">{tr('quadRoots', language)}</span>
                 <span className="font-bold text-gray-800">
                   {(() => {
                     const a = state.a || 0.0001;
                     const discriminant = state.b * state.b - 4 * a * state.c;
-                    if (discriminant < 0) return "কোন বাস্তব মূল নেই (None)";
+                    if (discriminant < 0) return tr('quadNoRoots', language);
                     if (discriminant === 0) return <MathText math={`x = ${parseFloat((-state.b / (2 * a)).toFixed(2))}`} />;
                     const x1 = (-state.b + Math.sqrt(discriminant)) / (2 * a);
                     const x2 = (-state.b - Math.sqrt(discriminant)) / (2 * a);
@@ -364,7 +367,7 @@ export default function QuadraticSim() {
            className="mt-auto px-6 py-3 bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
-          মোড পরিবর্তন করুন (Change Mode)
+          {tr('quadChangeMode', language)}
         </button>
       </div>
     </div>
@@ -410,21 +413,21 @@ function ValueEditor({ label, value, onChange, color }: { label: string, value: 
        <div className="flex flex-col -gap-1 mb-1">
           <button 
             onClick={() => onChange(value + 0.1)}
-            className="p-1 px-2 hover:bg-gray-200 rounded transition-colors text-green-600 font-bold"
+            className="p-2 md:p-1 px-4 md:px-2 hover:bg-gray-200 rounded transition-all text-green-600 font-bold active:scale-125"
           >
             ▲
           </button>
-          <div className={cn("px-3 py-1 bg-white border border-gray-300 rounded shadow-inner min-w-[3rem] text-center font-bold", color)}>
+          <div className={cn("px-2 md:px-3 py-1 bg-white border border-gray-300 rounded shadow-inner min-w-[2.5rem] md:min-w-[3rem] text-center font-bold text-sm md:text-base", color)}>
             {parseFloat(value.toFixed(1))}
           </div>
           <button 
              onClick={() => onChange(value - 0.1)}
-            className="p-1 px-2 hover:bg-gray-200 rounded transition-colors text-purple-600 font-bold"
+            className="p-2 md:p-1 px-4 md:px-2 hover:bg-gray-200 rounded transition-all text-purple-600 font-bold active:scale-125"
           >
             ▼
           </button>
        </div>
-       <span className="text-xs italic text-gray-400 font-bold">{label}</span>
+       <span className="text-[10px] md:text-xs italic text-gray-400 font-bold">{label}</span>
     </div>
   );
 }
