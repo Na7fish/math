@@ -40,26 +40,46 @@ This document contains highly optimized configuration elements for the Math Labo
 ## 2. URL Parameter Schemas & Building Instructions
 
 ### URL 1: Trigonometry Unit Circle Simulation
-* **URL:** `https://trigonometry-unit-circle.vercel.app/?lang=BN&sim=trig`
+* **URL:** `https://trigonometry-unit-circle.vercel.app/?lang={{lang}}&sim=trig&angle={{angle}}&unit={{unit}}`
 
 ```json
 {
+  "lang": {
+    "type": "string",
+    "allowed_values": ["BN", "EN"],
+    "aliases": ["language", "locale"]
+  },
   "sim": {
     "type": "string",
     "allowed_values": ["trig"],
     "aliases": ["mode", "simulation", "view", "trigonometry", "unit_circle"]
+  },
+  "angle": {
+    "type": "integer",
+    "allowed_values": "Any integer representing degrees or radians depending on the unit",
+    "aliases": ["deg", "rad", "theta"]
+  },
+  "unit": {
+    "type": "string",
+    "allowed_values": ["deg", "rad"],
+    "aliases": ["angle_unit", "type"]
   }
 }
 ```
-If the student asks about trigonometry, the unit circle, trigonometric functions, angles, radians, degrees, circular motion, or calculating coordinate values like $(\cos\theta, \sin\theta)$, set sim to trig to directly open that state. If no specific option is mentioned, or if they ask about the topic generally, provide the base URL.
+If the student asks about trigonometry, the unit circle, trigonometric functions, angles, radians, degrees, circular motion, or calculating coordinate values like $(\cos\theta, \sin\theta)$, set sim to trig to directly open that state. If a specific angle is requested (e.g. 45 degrees), fill in the `angle` template variable and set the corresponding `unit` to `deg` or `rad`. If no specific option is mentioned, provide the base URL with default template placeholders.
 
 ---
 
 ### URL 2: Quadratic Equation Simulation
-* **URL:** `https://trigonometry-unit-circle.vercel.app/?lang=BN&sim=quad`
+* **URL:** `https://trigonometry-unit-circle.vercel.app/?lang={{lang}}&sim=quad`
 
 ```json
 {
+  "lang": {
+    "type": "string",
+    "allowed_values": ["BN", "EN"],
+    "aliases": ["language", "locale"]
+  },
   "sim": {
     "type": "string",
     "allowed_values": ["quad"],
@@ -72,15 +92,30 @@ If the student asks about quadratic equations, parabolas, equation coefficients,
 ---
 
 ### URL 3: Circle Geometry Theorems
-* **URL:** `https://trigonometry-unit-circle.vercel.app/?lang=BN&sim=geom`
+* **URL:** `https://trigonometry-unit-circle.vercel.app/?lang={{lang}}&sim=geom&chapter={{chapter}}&theorem={{theorem}}`
 
 ```json
 {
+  "lang": {
+    "type": "string",
+    "allowed_values": ["BN", "EN"],
+    "aliases": ["language", "locale"]
+  },
   "sim": {
     "type": "string",
     "allowed_values": ["geom"],
     "aliases": ["mode", "simulation", "view", "geometry", "theorem"]
+  },
+  "chapter": {
+    "type": "integer",
+    "allowed_values": [6, 8, 14, 15],
+    "aliases": ["ch", "chapter_number"]
+  },
+  "theorem": {
+    "type": "integer",
+    "allowed_values": [14, 18, 35, 38],
+    "aliases": ["th", "theorem_number"]
   }
 }
 ```
-If the student asks about geometry, circle theorems, NCTB Class 8 math proofs, chords, perpendiculars, equal distance properties, or interactive geometric proofs, set sim to geom to directly open that state. If no specific option is mentioned, or if they ask about the topic generally, provide the base URL.
+If the student asks about geometry, circle theorems, NCTB Class 8 math proofs, chords, perpendiculars, equal distance properties, or interactive geometric proofs, set sim to geom to directly open that state. If they specify a specific NCTB chapter or theorem, dynamically set `chapter` and `theorem` parameters (e.g. Chapter 8 Theorem 18) to directly route the user to that visual proof step.
